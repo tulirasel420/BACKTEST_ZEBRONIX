@@ -22,7 +22,7 @@ def run_web_server():
 # --- Configuration Setup ---
 API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI'  # তোমার বটের টোকেন
 ADMIN_ID = 8280240170                                           # তোমার আসল টেলিগ্রাম আইডি
-PASSWORD = 'RASUxIMTU'
+PASSWORD = 'backtest'
 USER_FILE = 'users.txt'
 
 bot = telebot.TeleBot(API_TOKEN)
@@ -135,26 +135,34 @@ def generate_future_signals(valid_markets, start_time, end_time, mode, filter_da
     except: pass
     return generated_list
 
-# --- Smart Fallback HTML Message Handlers ---
+# --- Bulletproof 3-Layer Fallback Message Handlers ---
 def safe_send_html(chat_id, text, reply_markup=None):
     try:
-        # প্রথমে প্রিমিয়াম ট্যাগসহ পাঠানোর চেষ্টা করবে
+        # Layer 1: অরিজিনাল প্রিমিয়াম ট্যাগসহ HTML মোডে পাঠানোর চেষ্টা
         return bot.send_message(chat_id, text, parse_mode='HTML', reply_markup=reply_markup)
-    except telebot.apihelper.ApiTelegramException as e:
-        if "ENTITY_TEXT_INVALID" in str(e):
-            # রিজেক্ট হলে অটোমেটিক প্রিমিয়াম ট্যাগ রিমুভ করে রেগুলার ইমোজি ও HTML ফরম্যাটে পাঠাবে
+    except Exception as e:
+        try:
+            # Layer 2: কোনো এরর আসলে কাস্টম প্রিমিয়াম ট্যাগ রিমুভ করে স্ট্যান্ডার্ড HTML পাঠানো
             clean_text = re.sub(r"<tg-emoji[^>]*>(.*?)</tg-emoji>", r"\1", text)
             return bot.send_message(chat_id, clean_text, parse_mode='HTML', reply_markup=reply_markup)
-        raise e
+        except Exception:
+            # Layer 3: আল্টিমেট ব্যাকআপ - সমস্ত HTML ট্যাগ রিমুভ করে ১০০% প্লেইন টেক্সট ডেলিভারি
+            plain_text = re.sub(r"<[^>]+>", "", text)
+            return bot.send_message(chat_id, plain_text, reply_markup=reply_markup)
 
 def safe_edit_html(chat_id, message_id, text, reply_markup=None):
     try:
+        # Layer 1: অরিজিনাল প্রিমিয়াম ট্যাগসহ HTML মোডে এডিট করার চেষ্টা
         return bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, parse_mode='HTML', reply_markup=reply_markup)
-    except telebot.apihelper.ApiTelegramException as e:
-        if "ENTITY_TEXT_INVALID" in str(e):
+    except Exception as e:
+        try:
+            # Layer 2: কাস্টম প্রিমিয়াম ট্যাগ রিমুভ করে এডিট
             clean_text = re.sub(r"<tg-emoji[^>]*>(.*?)</tg-emoji>", r"\1", text)
             return bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=clean_text, parse_mode='HTML', reply_markup=reply_markup)
-        raise e
+        except Exception:
+            # Layer 3: প্লেইন টেক্সটে রূপান্তর করে এডিট সম্পন্ন করা
+            plain_text = re.sub(r"<[^>]+>", "", text)
+            return bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=plain_text, reply_markup=reply_markup)
 
 # --- Grid Keyboard Generator ---
 def make_pair_selection_keyboard(selected_pairs, mode):
@@ -172,7 +180,10 @@ def make_pair_selection_keyboard(selected_pairs, mode):
 
 # --- Main Dashboard Setup ---
 def show_main_dashboard(chat_id):
-    user_data[chat_id]['state'] = 'MAIN_MENU'
+    if chat_id not in user_data:
+        user_data[chat_id] = {'state': 'MAIN_MENU', 'raw_signals': [], 'selected_pairs': []}
+    else:
+        user_data[chat_id]['state'] = 'MAIN_MENU'
     
     markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
@@ -197,8 +208,8 @@ def show_main_dashboard(chat_id):
 def start_command(message):
     chat_id = message.chat.id
     save_user(chat_id)
-    safe_send_html(chat_id, '⚙️ <b>Please enter password to access Control Center:</b>')
     user_data[chat_id] = {'state': 'AWAITING_PASSWORD', 'raw_signals': [], 'selected_pairs': []}
+    safe_send_html(chat_id, '⚙️ <b>Please enter password to access Control Center:</b>')
 
 @bot.message_handler(func=lambda m: user_data.get(m.chat.id, {}).get('state') == 'AWAITING_PASSWORD')
 def check_password(message):
