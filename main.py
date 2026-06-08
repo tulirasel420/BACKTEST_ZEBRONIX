@@ -264,7 +264,7 @@ def global_callback_router(call):
         return
 
     if call.data == "edit_mode":
-        bot.send_message(chat_id, "<tg-emoji emoji-id="6300547101440876358">😬</tg-emoji> <b>Please send your edited signals list now:</b>", parse_mode='HTML')
+        bot.send_message(chat_id, "<tg-emoji emoji-id='6300547101440876358'>😬</tg-emoji> <b>Please send your edited signals list now:</b>", parse_mode='HTML')
         user_data[chat_id]['state'] = 'EDITING_PROCESS'
         return
 
@@ -371,7 +371,7 @@ def global_text_handler(message):
         header = user_data[chat_id].get('last_header', '')
         footer = user_data[chat_id].get('last_footer', '')
         clean_text = text.replace('<', '&lt;').replace('>', '&gt;')
-        bot.send_message(chat_id, "<tg-emoji emoji-id="6066872327595892055">🤑</tg-emoji> <b>Signals List Updated Successfully!</b>", parse_mode='HTML')
+        bot.send_message(chat_id, "<tg-emoji emoji-id='6066872327595892055'>🤑</tg-emoji> <b>Signals List Updated Successfully!</b>", parse_mode='HTML')
         bot.send_message(chat_id, f"{header}<pre>{clean_text}</pre>\n{footer}", parse_mode='HTML')
         show_main_dashboard(chat_id)
         return
@@ -379,7 +379,7 @@ def global_text_handler(message):
     if state == 'FUTURE_START_TIME':
         user_data[chat_id]['start_time'] = text if re.match(r'^\d{2}:\d{2}$', text) else "00:00"
         user_data[chat_id]['state'] = 'FUTURE_END_TIME'
-        bot.send_message(chat_id, "<tg-emoji emoji-id="6323361327767099558">⭐</tg-emoji> <b>Enter End Time (Format HH:MM, e.g. 18:45):</b>", parse_mode='HTML')
+        bot.send_message(chat_id, "<tg-emoji emoji-id='6323361327767099558'>⭐</tg-emoji> <b>Enter End Time (Format HH:MM, e.g. 18:45):</b>", parse_mode='HTML')
         return
 
     if state == 'FUTURE_END_TIME':
@@ -432,7 +432,7 @@ def execute_future_generation(chat_id, message_id, filter_days):
     density_status = "HIGH" if filter_days <= 5 else "MEDIUM" if filter_days <= 12 else "ULTRA"
     
     output_text = (
-        f"<tg-emoji emoji-id="6132008672030629216">👑</tg-emoji> <b>ZEBRONIX GENERATED SIGNALS</b>\n\n"
+        f"<tg-emoji emoji-id='6132008672030629216'>👑</tg-emoji> <b>ZEBRONIX GENERATED SIGNALS</b>\n\n"
         f"<b>Mode:</b> {market_mode}\n"
         f"<b>Days Analyser:</b> {filter_days} Days ({density_status})\n"
         f"<b>Window:</b> {start_time} to {end_time}\n"
@@ -480,14 +480,14 @@ def broadcast_handler(message):
             bot.send_message(message.chat.id, '<tg-emoji emoji-id="6311936890853402623">⚠️</tg-emoji> <b>Please provide message context.</b>', parse_mode='HTML')
             return
         user_list = get_all_users()
-        status_msg = bot.send_message(message.chat.id, f"<tg-emoji emoji-id="6132203985668415642">🔉</tg-emoji> <b>Sending...</b>", parse_mode='HTML')
+        status_msg = bot.send_message(message.chat.id, f"<tg-emoji emoji-id='6132203985668415642'>🔉</tg-emoji> <b>Sending...</b>", parse_mode='HTML')
         success, failed = 0, 0
         for user_id in user_list:
             try:
                 bot.send_message(int(user_id), msg_text, parse_mode='HTML')
                 success += 1
             except: failed += 1
-        bot.edit_message_text(chat_id=message.chat.id, message_id=status_msg.message_id, text=f"<tg-emoji emoji-id="6303181741754424089">📊</tg-emoji> <b>Report:</b>\n\n<tg-emoji emoji-id="6311890389242487133">✅</tg-emoji> Sent: {success}\n<tg-emoji emoji-id="6312080737898077535">❌</tg-emoji> Failed: {failed}", parse_mode='HTML')
+        bot.edit_message_text(chat_id=message.chat.id, message_id=status_msg.message_id, text=f"<tg-emoji emoji-id='6303181741754424089'>📊</tg-emoji> <b>Report:</b>\n\n<tg-emoji emoji-id='6311890389242487133'>✅</tg-emoji> Sent: {success}\n<tg-emoji emoji-id='6312080737898077535'>❌</tg-emoji> Failed: {failed}", parse_mode='HTML')
 
 # --- Main Runtime Guard ---
 if __name__ == '__main__':
