@@ -203,7 +203,7 @@ def global_callback_router(call):
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=welcome_text, parse_mode='HTML')
         return
 
-    elif call.data == 'btn_future_mode':
+    if call.data == 'btn_future_mode':
         user_data[chat_id]['state'] = 'FUTURE_MARKET_SELECT'
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(
@@ -214,11 +214,11 @@ def global_callback_router(call):
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="6073116733302906931">⛈</tg-emoji> <b>SELECT TARGET MARKET TYPE FROM BELOW:</b>', reply_markup=markup, parse_mode='HTML')
         return
 
-    elif call.data in ['btn_vip_pairs', 'btn_market_live']:
+    if call.data in ['btn_vip_pairs', 'btn_market_live']:
         bot.answer_callback_query(call.id, text="⚡ Synced with master server parameters!", show_alert=True)
         return
 
-    elif call.data == 'go_home':
+    if call.data == 'go_home':
         show_main_dashboard(chat_id)
         return
 
@@ -322,7 +322,7 @@ def global_callback_router(call):
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=display_text, reply_markup=keyboard, parse_mode='HTML')
         return
 
-    if state == 'FUTURE_SIGNAL_SELECTING' and call.data == 'pair_selection_done':
+    if state == 'FUTURE_GRID_SELECTING' and call.data == 'pair_selection_done':
         valid_markets = user_data[chat_id].get('selected_pairs', [])
         if not valid_markets:
             bot.answer_callback_query(call.id, text="⚠️ Please select at least ONE pair before continuing!", show_alert=True)
@@ -348,7 +348,7 @@ def global_callback_router(call):
         choice = call.data.replace('f_d_', '')
         user_data[chat_id]['action_choice'] = choice
         user_data[chat_id]['state'] = 'FUTURE_START_TIME'
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="5321022677933120114">⏰</tg-emoji> <b>Enter Start Time (Format HH:MM, e.g. 10:30):</b>", parse_mode='HTML')
+        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="5321022677933120114">⏰</tg-emoji> <b>Enter Start Time (Format HH:MM, e.g. 10:30):</b>', parse_mode='HTML')
         return
 
     if state == 'FUTURE_DAYS_SELECT' and call.data.startswith('f_day_'):
