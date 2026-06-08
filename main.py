@@ -165,8 +165,8 @@ def show_main_dashboard(chat_id):
     
     dashboard_text = (
         '<tg-emoji emoji-id="6066435044090583397">💰</tg-emoji> <b>WELCOME TO ZEBRONIX TOOL</b>\n\n'
-        '<tg-emoji emoji-id="6302933664443407379">⚙️</tg-emoji> <tg-emoji emoji-id="6303054202700571357">↗️</tg-emoji> <b>System Modules Initialized!</b>\n\n'
-        '<tg-emoji emoji-id="6132052287423522342">💎</tg-emoji> <b>Select a module from the dashboard grid below to start:</b>'
+        '<tg-emoji emoji-id="6303054202700571357">↗️</tg-emoji> <b>Selected: None selected</b>\n\n'
+        '<tg-emoji emoji-id="6132052287423522342">💎</tg-emoji> <b>Select a module how two use below to start:</b>'
     )
     bot.send_message(chat_id, dashboard_text, reply_markup=markup, parse_mode='HTML')
 
@@ -239,28 +239,25 @@ def global_callback_router(call):
         raw_list = user_data[chat_id].get('raw_signals', [])
         filtered_list = advanced_filter_engine(raw_list, selected_day)
         
-        header_text = f'<tg-emoji emoji-id="6312351947902952139">🚀</tg-emoji> <b>--- ZEBRONIX PREMIUM SIGNALS ---</b>\n━━━━━━━━━━━━━━━━━━━━━━\n📊 <b>Analysis Filter:</b> Day {selected_day}\n📥 <b>Total Input:</b> {len(raw_list)} | 🔥 <b>Filtered:</b> {len(filtered_list)}\n━━━━━━━━━━━━━━━━━━━━━━\n'
+        # --- Backtest Layout ---
+        header_text = "<b>✅ BACKTEST COMPLETE</b>\n<b>━━━━━━━━━━━━━━━━━</b>\n"
         
         body_text = ""
         if not filtered_list:
             body_text += "<code>No signals matching this matrix density.</code>\n"
         else:
-            body_text += "<pre>"
             for sig in filtered_list: 
                 clean_asset = sig['asset'].replace('<', '&lt;').replace('>', '&gt;')
                 body_text += f"M1;{clean_asset};{sig['time']};{sig['direction']}\n"
-            body_text += "</pre>"
             
-        footer_text = f'━━━━━━━━━━━━━━━━━━━━━━\n<tg-emoji emoji-id="6300814570529233894">🆗</tg-emoji> <i>Core Powered By: Zebronix Filter Engine</i>'
-        
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("😬 EDIT OUTPUT", callback_data="edit_mode"))
         
-        bot.send_message(chat_id, header_text + body_text + footer_text, reply_markup=markup, parse_mode='HTML')
+        bot.send_message(chat_id, header_text + body_text, reply_markup=markup, parse_mode='HTML')
         
         user_data[chat_id]['state'] = 'PREVIEW'
         user_data[chat_id]['last_header'] = header_text
-        user_data[chat_id]['last_footer'] = footer_text
+        user_data[chat_id]['last_footer'] = ""
         return
 
     if call.data == "edit_mode":
@@ -358,7 +355,7 @@ def global_text_handler(message):
             
             msg_body = (
                 '<tg-emoji emoji-id="6311890389242487133">✅</tg-emoji> <b>SIGNALS POOL SAVED!</b>\n\n'
-                '⚙ <b>Please choose your Martingale Strategy from buttons below:</b>'
+                '<tg-emoji emoji-id="6174514743588426961">🔒</tg-emoji> <b>Please choose your Martingale Strategy: <tg-emoji emoji-id="6172731696505427144">💯</tg-emoji></b>'
             )
             bot.send_message(chat_id, msg_body, reply_markup=markup, parse_mode='HTML')
             return
@@ -369,10 +366,9 @@ def global_text_handler(message):
 
     if state == 'EDITING_PROCESS':
         header = user_data[chat_id].get('last_header', '')
-        footer = user_data[chat_id].get('last_footer', '')
         clean_text = text.replace('<', '&lt;').replace('>', '&gt;')
         bot.send_message(chat_id, "<tg-emoji emoji-id='6066872327595892055'>🤑</tg-emoji> <b>Signals List Updated Successfully!</b>", parse_mode='HTML')
-        bot.send_message(chat_id, f"{header}<pre>{clean_text}</pre>\n{footer}", parse_mode='HTML')
+        bot.send_message(chat_id, f"{header}{clean_text}", parse_mode='HTML')
         show_main_dashboard(chat_id)
         return
 
@@ -391,7 +387,7 @@ def global_text_handler(message):
         markup.add(*buttons)
         
         info_msg = (
-            "🦅 <b>STRATEGY ANALYSIS DEPTH FILTER</b>\n\n"
+            "🦅<tg-emoji emoji-id=\"6172731696505427144\">💯</tg-emoji> <b>STRATEGY ANALYSIS DEPTH FILTER</b>\n\n"
             "▫️ <b>1 - 5 Days:</b> High Density Signals (High Quantity)\n"
             "▫️ <b>6 - 12 Days:</b> Balanced Filtered Strategy\n"
             "▫️ <b>13 - 15 Days:</b> Ultra Precise Strategy\n\n"
@@ -413,7 +409,7 @@ def execute_future_generation(chat_id, message_id, filter_days):
     start_time = data['start_time']
     end_time = data['end_time']
     
-    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text="⚡ <pre>ZEBRONIX PIPELINE ENGINE RUNNING...</pre>", parse_mode='HTML')
+    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text="⚡ <pre>ZEBRONIX RUNNING WAIT<tg-emoji emoji-id=\"6174917297988179811\">⌛</tg-emoji>...</pre>", parse_mode='HTML')
     
     all_signals = generate_future_signals(valid_markets, start_time, end_time, market_mode, filter_days)
     
@@ -429,20 +425,29 @@ def execute_future_generation(chat_id, message_id, filter_days):
                 filtered.append(sig)
                 
     filtered.sort(key=lambda s: datetime.strptime(s['time'], "%H:%M") if s.get('time') else datetime.min)
-    density_status = "HIGH" if filter_days <= 5 else "MEDIUM" if filter_days <= 12 else "ULTRA"
     
+    # --- Output Layout Generation ---
     output_text = (
-        f"<tg-emoji emoji-id='6132008672030629216'>👑</tg-emoji> <b>ZEBRONIX GENERATED SIGNALS</b>\n\n"
-        f"<b>Mode:</b> {market_mode}\n"
-        f"<b>Days Analyser:</b> {filter_days} Days ({density_status})\n"
-        f"<b>Window:</b> {start_time} to {end_time}\n"
-        f"-----------------------------\n<pre>"
+        "╔═══════════════╗\n"
+        "👑<tg-emoji emoji-id=\"6174544597906102118\">👑</tg-emoji>ZEBRONIX GENERATED SIGNAL⏰<tg-emoji emoji-id=\"6323361327767099558\">⭐</tg-emoji>\n"
+        "╚═══════════════╝\n\n"
     )
     
+    if market_mode == "BLACKOUT":
+        output_text += f"🏆<tg-emoji emoji-id=\"6312039841219485770\">🏆</tg-emoji> Mode: BACKOUT {market_mode} 😊<tg-emoji emoji-id=\"6174633744247297625\">💱</tg-emoji>\n"
+    else:
+        output_text += f"🏆<tg-emoji emoji-id=\"6312039841219485770\">🏆</tg-emoji> Mode: {market_mode} 😊<tg-emoji emoji-id=\"6174633744247297625\">💱</tg-emoji>\n"
+        
+    output_text += (
+        f"🔉<tg-emoji emoji-id=\"6174870736247723056\">📊</tg-emoji> Days Analyser: {filter_days} Days 🥳<tg-emoji emoji-id=\"6174679425519457351\">🔜</tg-emoji>\n"
+        f"🤖<tg-emoji emoji-id=\"6174514743588426961\">🔒</tg-emoji> Time Window: {start_time} - {end_time}\n"
+        "───────────────────\n"
+    )
+    
+    call_count, put_count = 0, 0
     if not filtered:
         output_text += "No setups match current algorithm parameters.\n"
     else:
-        call_count, put_count = 0, 0
         for sig in filtered:
             time_normal = sig.get('time', '')
             asset = sig.get('asset', '').strip().replace("-OTC", "_OTC").replace('<', '&lt;').replace('>', '&gt;')
@@ -450,22 +455,29 @@ def execute_future_generation(chat_id, message_id, filter_days):
             
             if market_mode == "BLACKOUT":
                 output_text += f"M1;{asset};{time_normal}\n"
-                call_count += 1
             else:
                 output_text += f"M1;{asset};{time_normal};{direction}\n"
                 if direction == "CALL": call_count += 1
                 else: put_count += 1
                 
-    output_text += "</pre>-----------------------------\n"
+    output_text += "───────────────────\n"
+    
     if market_mode == "BLACKOUT":
-        output_text += f"<b>Total Blackout Signals:</b> {len(filtered)}\n"
+        output_text += (
+            f"💎<tg-emoji emoji-id=\"6132052287423522342\">💎</tg-emoji>Total: {len(filtered)}\n\n"
+            "সিগনাল টাইমের আগের কেন্ডেল যে দিকে যাবে তার বিপরিতে এন্ট্রি নিবেন যেমন:\n"
+            "➡️<tg-emoji emoji-id=\"6172215346947166980\">➡️</tg-emoji> 00:54 এর আগের কেন্ডেল যদি গ্রিন হয় তাহলে 😀<tg-emoji emoji-id=\"6066652700148243688\">😀</tg-emoji> 𝙳𝚘𝚠𝚗 নিবেন।\n"
+            "➡️<tg-emoji emoji-id=\"6172215346947166980\">➡️</tg-emoji> 00:54 এর আগের কেন্ডেল যদি রেড হয় তাহলে 😀<tg-emoji emoji-id=\"6066511369954402964\">😀</tg-emoji> 𝚄𝚙 নিবেন。\n\n"
+            "✅<tg-emoji emoji-id=\"6172600880391526117\">🗓</tg-emoji> 𝙾𝚗𝚕𝚢 𝚞𝚜𝚎 𝚝𝚑𝚎𝚜𝚎 𝚜𝚒𝚐𝚗𝚊𝚕𝚜 𝚒𝚗 𝚀𝚄𝙾𝚃𝙴𝚇 𝙱𝙸𝙽𝙰𝚁𝚈 𝙱𝚁𝙾𝙺𝙴𝚁\n\n"
+        )
     else:
-        output_text += f"<b>Total:</b> {len(filtered)} | <b>CALL:</b> {call_count} | <b>PUT:</b> {put_count}\n"
+        output_text += f"💎<tg-emoji emoji-id=\"6132052287423522342\">💎</tg-emoji>Total: {str(len(filtered)).zfill(2)} | ⏫<tg-emoji emoji-id=\"6311874557993033039\">🔼</tg-emoji> CALL: {str(call_count).zfill(2)} | ⏬<tg-emoji emoji-id=\"6312244088389247483\">🔽</tg-emoji>PUT: {str(put_count).zfill(2)}\n\n"
         
     output_text += (
-        f"\n<b>Channel:</b> <a href='https://t.me/irttradingzone'>@irttradingzone</a>\n"
-        f"<b>Support:</b> @irtsupport1\n"
-        f"<i>Core Powered By: IRT TRADING ZONE</i>"
+        "🚀<tg-emoji emoji-id=\"6075388783887392362\">🚀</tg-emoji> Channel: @irttradindzone✔️\n"
+        "📶<tg-emoji emoji-id=\"6174712664271360634\">💬</tg-emoji> Owner   : @irtsupport1❤️‍🔥<tg-emoji emoji-id=\"6131977683841589337\">👑</tg-emoji>\n"
+        "👉<tg-emoji emoji-id=\"6066874041287842747\">👉</tg-emoji> Admin   : @imtiaz_x_admin\n"
+        "⚡️<tg-emoji emoji-id=\"6134212600138833922\">🤖</tg-emoji> Core Powered By: IRT TRADING ZONE"
     )
     
     bot.send_message(chat_id, output_text, parse_mode="HTML", disable_web_page_preview=True)
