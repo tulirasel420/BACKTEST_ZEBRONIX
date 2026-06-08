@@ -151,6 +151,8 @@ def make_pair_selection_keyboard(selected_pairs, mode):
 
 # --- Main Dashboard Setup ---
 def show_main_dashboard(chat_id):
+    if chat_id not in user_data:
+        user_data[chat_id] = {'raw_signals': [], 'selected_pairs': []}
     user_data[chat_id]['state'] = 'MAIN_MENU'
     
     markup = types.InlineKeyboardMarkup(row_width=2)
@@ -192,6 +194,7 @@ def global_callback_router(call):
 
     if call.data == 'btn_backtest_mode':
         user_data[chat_id]['state'] = 'COLLECTING_SIGNALS'
+        user_data[chat_id]['raw_signals'] = []  # ফ্রেশ ক্লিয়ার ক্যাশ
         welcome_text = (
             '<tg-emoji emoji-id="6300758774609092069">🌍</tg-emoji> <b>BACKTEST ENGINE ACTIVATED</b>\n\n'
             '📥 <b>Paste your signals in any format below.</b>\n'
@@ -215,11 +218,10 @@ def global_callback_router(call):
         bot.answer_callback_query(call.id, text="⚡ Synced with master server parameters!", show_alert=True)
         return
 
-    # [FIXED] Backtest Callback: MTG Select -> স্পন ডে ১ থেকে ডে ৭ ইনলাইন বাটন গ্রিড
+    # Backtest Callback: MTG Select -> স্পন ডে ১ থেকে ডে ৭ ইনলাইন বাটন গ্রিড
     if state == 'SELECTING_MTG' and call.data.startswith('mtg_'):
         user_data[chat_id]['state'] = 'SELECTING_DAYS'
         
-        # এখানে ১ থেকে ৭ দিনের বাটন জেনারেট করে যুক্ত করা হয়েছে
         markup = types.InlineKeyboardMarkup(row_width=3)
         buttons = [types.InlineKeyboardButton(f"📅 Day {i}", callback_data=f'day_{i}') for i in range(1, 8)]
         markup.add(*buttons)
@@ -231,27 +233,35 @@ def global_callback_router(call):
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=msg_body, reply_markup=markup, parse_mode='HTML')
         return
 
-    # Backtest Callback: Final Dynamic Compilation
+    # Backtest Callback: Final Dynamic Compilation (ENTITY_TEXT_INVALID এরর ফিক্সড)
     if state == 'SELECTING_DAYS' and call.data.startswith('day_'):
         selected_day = call.data.split('_')[1]
-        msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='🔍 <b>Running Advanced Backtest Algorithm...</b>', parse_mode='HTML')
+        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='🔍 <b>Running Advanced Backtest Algorithm...</b>', parse_mode='HTML')
         
-        raw_list = user_data[chat_id]['raw_signals']
+        raw_list = user_data[chat_id].get('raw_signals', [])
         filtered_list = advanced_filter_engine(raw_list, selected_day)
         
         header_text = f'🚀 <b>--- ZEBRONIX PREMIUM SIGNALS ---</b>\n━━━━━━━━━━━━━━━━━━━━━━\n📊 <b>Analysis Filter:</b> Day {selected_day}\n📥 <b>Total Input:</b> {len(raw_list)} | 🔥 <b>Filtered:</b> {len(filtered_list)}\n━━━━━━━━━━━━━━━━━━━━━━\n'
+        
         body_text = ""
         if not filtered_list:
             body_text += "<code>No signals matching this matrix density.</code>\n"
         else:
             body_text += "<pre>"
-            for sig in filtered_list: body_text += f"M1;{sig['asset']};{sig['time']};{sig['direction']}\n"
+            for sig in filtered_list: 
+                # HTML ট্যাগ সেফ রাখতে নিরাপদ প্রতিস্থাপন করা হলো
+                clean_asset = sig['asset'].replace('<', '&lt;').replace('>', '&gt;')
+                body_text += f"M1;{clean_asset};{sig['time']};{sig['direction']}\n"
             body_text += "</pre>"
+            
         footer_text = f'━━━━━━━━━━━━━━━━━━━━━━\n⚡ <i>Core Powered By: Zebronix Filter Engine</i>'
         
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("✍️ EDIT OUTPUT", callback_data="edit_mode"))
+        
+        # মূল এরর সমাধান করে ফাইনাল মেসেজ সেন্ড করা হচ্ছে
         bot.send_message(chat_id, header_text + body_text + footer_text, reply_markup=markup, parse_mode='HTML')
+        
         user_data[chat_id]['state'] = 'PREVIEW'
         user_data[chat_id]['last_header'] = header_text
         user_data[chat_id]['last_footer'] = footer_text
@@ -277,7 +287,7 @@ def global_callback_router(call):
     if state == 'FUTURE_GRID_SELECTING' and call.data.startswith('toggle_'):
         pair = call.data.replace('toggle_', '')
         mode = user_data[chat_id]['market_mode']
-        current_selections = user_data[chat_id]['selected_pairs']
+        current_selections = user_data[chat_id].get('selected_pairs', [])
         
         if pair in current_selections:
             current_selections.remove(pair)
@@ -285,7 +295,6 @@ def global_callback_router(call):
             current_selections.append(pair)
             
         user_data[chat_id]['selected_pairs'] = current_selections
-        
         keyboard = make_pair_selection_keyboard(current_selections, mode)
         
         pairs_formatted = ", ".join(current_selections) if current_selections else "None"
@@ -298,7 +307,7 @@ def global_callback_router(call):
 
     # Future Callback: Pair Grid Completed
     if state == 'FUTURE_GRID_SELECTING' and call.data == 'pair_selection_done':
-        valid_markets = user_data[chat_id]['selected_pairs']
+        valid_markets = user_data[chat_id].get('selected_pairs', [])
         if not valid_markets:
             bot.answer_callback_query(call.id, text="⚠️ Please select at least ONE pair before continuing!", show_alert=True)
             return
@@ -337,12 +346,14 @@ def global_callback_router(call):
 @bot.message_handler(func=lambda m: True)
 def global_text_handler(message):
     chat_id = message.chat.id
-    state = user_data.get(chat_id, {}).get('state')
+    if chat_id not in user_data:
+        user_data[chat_id] = {'raw_signals': [], 'selected_pairs': []}
+    state = user_data[chat_id].get('state')
     text = message.text.strip()
 
     if state == 'COLLECTING_SIGNALS':
         if text == '/done':
-            if not user_data[chat_id]['raw_signals']:
+            if not user_data[chat_id].get('raw_signals'):
                 bot.send_message(chat_id, '⚠️ <b>No signals received yet.</b>', parse_mode='HTML')
                 return
             user_data[chat_id]['state'] = 'SELECTING_MTG'
@@ -368,8 +379,10 @@ def global_text_handler(message):
     if state == 'EDITING_PROCESS':
         header = user_data[chat_id].get('last_header', '')
         footer = user_data[chat_id].get('last_footer', '')
+        # ইউজার এডিট করার সময় স্পেশাল ক্যারেক্টার ফিক্স
+        clean_text = text.replace('<', '&lt;').replace('>', '&gt;')
         bot.send_message(chat_id, "✅ <b>Signals List Updated Successfully!</b>", parse_mode='HTML')
-        bot.send_message(chat_id, f"{header}<pre>{text}</pre>\n{footer}", parse_mode='HTML')
+        bot.send_message(chat_id, f"{header}<pre>{clean_text}</pre>\n{footer}", parse_mode='HTML')
         show_main_dashboard(chat_id)
         return
 
@@ -429,7 +442,7 @@ def execute_future_generation(chat_id, message_id, filter_days):
     density_status = "HIGH" if filter_days <= 5 else "MEDIUM" if filter_days <= 12 else "ULTRA"
     
     output_text = (
-        f"<b>ZEBRONIX GENERATED SIGNALS</b>\n\n"
+        f"👑 <b>ZEBRONIX GENERATED SIGNALS</b>\n\n"
         f"<b>Mode:</b> {market_mode}\n"
         f"<b>Days Analyser:</b> {filter_days} Days ({density_status})\n"
         f"<b>Window:</b> {start_time} to {end_time}\n"
@@ -442,7 +455,7 @@ def execute_future_generation(chat_id, message_id, filter_days):
         call_count, put_count = 0, 0
         for sig in filtered:
             time_normal = sig.get('time', '')
-            asset = sig.get('asset', '').strip().replace("-OTC", "_OTC")
+            asset = sig.get('asset', '').strip().replace("-OTC", "_OTC").replace('<', '&lt;').replace('>', '&gt;')
             direction = sig.get('direction', '').upper()
             
             if market_mode == "BLACKOUT":
