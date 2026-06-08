@@ -135,14 +135,13 @@ def generate_future_signals(valid_markets, start_time, end_time, mode, filter_da
     except: pass
     return generated_list
 
-# --- Grid Keyboard Generator (বাটন বাগ ফিক্সড লেআউট) ---
+# --- Grid Keyboard Generator ---
 def make_pair_selection_keyboard(selected_pairs, mode):
     markup = types.InlineKeyboardMarkup(row_width=2)
     pool = OTC_PAIRS_PLAIN if mode in ["OTC", "BLACKOUT"] else REAL_PAIRS_PLAIN
     
     buttons = []
     for pair in pool:
-        # বাটনের টেক্সটে স্ট্যান্ডার্ড ইমোজি দেওয়া হয়েছে যাতে কোড ভেঙে না যায়
         label = f"🟢 {pair}" if pair in selected_pairs else f"▪️ {pair}"
         buttons.append(types.InlineKeyboardButton(label, callback_data=f"toggle_{pair}"))
     
@@ -150,7 +149,7 @@ def make_pair_selection_keyboard(selected_pairs, mode):
     markup.add(types.InlineKeyboardButton("➔ CONTINUE SYSTEM PROCESS", callback_data="pair_selection_done"))
     return markup
 
-# --- Main Dashboard Setup (504.jpg লেআউট) ---
+# --- Main Dashboard Setup ---
 def show_main_dashboard(chat_id):
     user_data[chat_id]['state'] = 'MAIN_MENU'
     
@@ -216,20 +215,20 @@ def global_callback_router(call):
         bot.answer_callback_query(call.id, text="⚡ Synced with master server parameters!", show_alert=True)
         return
 
-    # Backtest Callback: MTG Select
+    # [FIXED] Backtest Callback: MTG Select -> স্পন ডে ১ থেকে ডে ৭ ইনলাইন বাটন গ্রিড
     if state == 'SELECTING_MTG' and call.data.startswith('mtg_'):
         user_data[chat_id]['state'] = 'SELECTING_DAYS'
         
-        markup = types.InlineKeyboardMarkup(row_width=4)
+        # এখানে ১ থেকে ৭ দিনের বাটন জেনারেট করে যুক্ত করা হয়েছে
+        markup = types.InlineKeyboardMarkup(row_width=3)
         buttons = [types.InlineKeyboardButton(f"📅 Day {i}", callback_data=f'day_{i}') for i in range(1, 8)]
         markup.add(*buttons)
         
-        # তোমার কাঙ্ক্ষিত প্রিমিয়াম টিকমার্ক ইমোজি বডিতে সেট করা হয়েছে
         msg_body = (
             '<tg-emoji emoji-id="6311890389242487133">✅</tg-emoji> <b>MARTINGALE SETUP COMPLETE</b>\n\n'
             '📥 <b>Now choose Days Filter Strategy Depth (1 to 7):</b>'
         )
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=msg_body, parse_mode='HTML')
+        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=msg_body, reply_markup=markup, parse_mode='HTML')
         return
 
     # Backtest Callback: Final Dynamic Compilation
@@ -267,14 +266,14 @@ def global_callback_router(call):
     if state == 'FUTURE_MARKET_SELECT' and call.data.startswith('f_m_'):
         mode = call.data.replace('f_m_', '')
         user_data[chat_id]['market_mode'] = mode
-        user_data[chat_id]['selected_pairs'] = []  # ফ্রেশ বাস্কেট
+        user_data[chat_id]['selected_pairs'] = []  
         user_data[chat_id]['state'] = 'FUTURE_GRID_SELECTING'
         
         keyboard = make_pair_selection_keyboard([], mode)
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='🎛️ <b>TAP PAIRS FROM GRID TO SELECT / UNSELECT:</b>', reply_markup=keyboard, parse_mode='HTML')
         return
 
-    # Future Callback: Dynamic Grid Toggle (সিলেক্টেড থাকলে বডিতে প্রিমিয়াম রেন্ডার হবে)
+    # Future Callback: Dynamic Grid Toggle
     if state == 'FUTURE_GRID_SELECTING' and call.data.startswith('toggle_'):
         pair = call.data.replace('toggle_', '')
         mode = user_data[chat_id]['market_mode']
@@ -287,10 +286,8 @@ def global_callback_router(call):
             
         user_data[chat_id]['selected_pairs'] = current_selections
         
-        # বাটন ফ্লাশ আপডেট
         keyboard = make_pair_selection_keyboard(current_selections, mode)
         
-        # এখানে মেসেজের ভেতর লাইভ প্রিমিয়াম টিকমার্ক আপডেট দেখাবে!
         pairs_formatted = ", ".join(current_selections) if current_selections else "None"
         display_text = (
             f'🎛️ <b>TAP PAIRS FROM GRID TO SELECT / UNSELECT:</b>\n\n'
@@ -357,10 +354,9 @@ def global_text_handler(message):
                 types.InlineKeyboardButton('🛡️ MTG 3', callback_data='mtg_3')
             )
             
-            # প্রিমিয়াম অ্যানিমেটেড ইমোজি চমৎকারভাবে রেন্ডার হবে
             msg_body = (
                 '<tg-emoji emoji-id="6311890389242487133">✅</tg-emoji> <b>SIGNALS POOL SAVED!</b>\n\n'
-                '⚙ *Please choose your Martingale Strategy from buttons below:*'
+                '⚙ <b>Please choose your Martingale Strategy from buttons below:</b>'
             )
             bot.send_message(chat_id, msg_body, reply_markup=markup, parse_mode='HTML')
             return
