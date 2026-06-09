@@ -26,8 +26,8 @@ ADMIN_ID = '8280240170'
 PASSWORD = 'backtest'
 USER_FILE = 'users.txt'
 
-# Kimi AI / OpenAI Compatible API Integration
-KIMI_API_KEY = 'sk-GLX6UVnx2D2ys4wH2Wvv1YefbYSR0KrZ46CRIBN3amUqcDQk'
+# Gemini AI API Integration
+GEMINI_API_KEY = 'AQ.Ab8RN6KLCHz7qK_sTDDgaj3n8mxjjhExmTAshUr9aWzanxpxZw'
 
 bot = telebot.TeleBot(API_TOKEN)
 user_data = {}
@@ -217,7 +217,7 @@ def generate_future_signals(valid_markets, start_time, end_time, mode, filter_da
         print(f"Future Generation Error: {e}")
     return generated_list
 
-# --- Kimi AI Core Processing Engine ---
+# --- Gemini AI Core Processing Engine ---
 def kimi_ai_filter(signals_list):
     if not signals_list:
         return "No signals provided to analyze."
@@ -225,34 +225,37 @@ def kimi_ai_filter(signals_list):
     input_signals = "\n".join([f"M1;{s['asset']};{s['time']};{s['direction']}" for s in signals_list])
     
     prompt = (
-        f"You are the advanced Kimi v2.6 Binary Options Filtration system. Analyze these trading logs with simulated "
-        f"RSI oscillators, EMA (20/50/200) death/golden crosses, and real-time support resistance metrics.\n"
-        f"Eliminate low-accuracy setups and return strictly high probability operations.\n\n"
-        f"Output must be formatted exactly like this without exceptions:\n"
+        f"<tg-emoji emoji-id='6116164567740458168'>✨</tg-emoji>You are an advanced Binary Options Filtration system. Analyze these trading logs with simulated "
+        f"<tg-emoji emoji-id='6116105164047786195'>💻</tg-emoji>RSI oscillators, EMA (20/50/200) death/golden crosses, and real-time support resistance metrics.\n"
+        f"<tg-emoji emoji-id='6212998462309408325'>🔔</tg-emoji>Eliminate low-accuracy setups and return strictly high probability operations based on the technical filters.\n\n"
+        f"Output must be formatted exactly like this without exceptions:<tg-emoji emoji-id='6210503953893826993'>📶</tg-emoji>\n"
         f"M1;ASSET;HH:MM;DIRECTION\n\n"
         f"Do not write conversational introductions, explanations, markdown formatting or thoughts. Provide only raw data output.\n\n"
         f"Target data:\n{input_signals}"
     )
     
-    url = "https://api.moonshot.cn/v1/chat/completions"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {
-        'Content-Type': 'application/json',
-        'Authorization': f'Bearer {KIMI_API_KEY}'
+        'Content-Type': 'application/json'
     }
     payload = {
-        "model": "moonshot-v1-8k",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.2
+        "contents": [{
+            "parts": [{
+                "text": prompt
+            }]
+        }],
+        "generationConfig": {
+            "temperature": 0.2
+        }
     }
     
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=25)
         if response.status_code == 200:
             result_json = response.json()
-            ai_text = result_json['choices'][0]['message']['content'].strip()
-            
-            # [FIXED LINE] হেক্স কোড (\x60) ব্যবহার করা হয়েছে যাতে টেক্সট এডিটর লাইন কেটে না ফেলে
-            ai_text = re.sub(r'\x60\x60\x60[a-zA-Z]*\n|\x60\x60\x60', '', ai_text).strip()
+            ai_text = result_json['candidates'][0]['content']['parts'][0]['text'].strip()
+            ai_text = re.sub(r'```[a-zA-Z]*\n|
+```', '', ai_text).strip()
             return ai_text
         else:
             return f"Kimi Core Engine Link Interrupted (Status Code: {response.status_code})"
@@ -266,7 +269,7 @@ def make_pair_selection_keyboard(selected_pairs, mode):
     
     buttons = []
     for pair in pool:
-        label = f"✔️ {pair}" if pair in selected_pairs else f"▪️ {pair}"
+        label = f"☑️ {pair}" if pair in selected_pairs else f"▪️ {pair}"
         buttons.append(types.InlineKeyboardButton(label, callback_data=f"toggle_{pair}"))
     
     markup.add(*buttons)
@@ -282,8 +285,8 @@ def show_main_dashboard(chat_id):
     
     markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
-        types.InlineKeyboardButton('📶 BACKTEST ENGINE', callback_data='btn_backtest_mode'),
-        types.InlineKeyboardButton('♦️ FUTURE GENERATOR', callback_data='btn_future_mode'),
+        types.InlineKeyboardButton('📶 BACKTEST SIGNAL', callback_data='btn_backtest_mode'),
+        types.InlineKeyboardButton('✅ FUTURE GENERATOR', callback_data='btn_future_mode'),
         types.InlineKeyboardButton('💻 AI FILTER SIGNAL', callback_data='btn_market_live')
     )
     
@@ -335,7 +338,7 @@ def global_callback_router(call):
         markup.add(
             types.InlineKeyboardButton('🥳 OTC MARKETS', callback_data='f_m_OTC'),
             types.InlineKeyboardButton('📊 REAL MARKETS', callback_data='f_m_REAL'),
-            types.InlineKeyboardButton('🏴 BLACKOUT SIGNALS', callback_data='f_m_BLACKOUT'),
+            types.InlineKeyboardButton('⚫ BLACKOUT SIGNALS', callback_data='f_m_BLACKOUT'),
             types.InlineKeyboardButton('🔙 BACK TO MAIN', callback_data='go_home')
         )
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="6073116733302906931">⛈</tg-emoji> <b>SELECT TARGET MARKET TYPE FROM BELOW:</b>', reply_markup=markup, parse_mode='HTML')
@@ -345,9 +348,9 @@ def global_callback_router(call):
         user_data[chat_id]['state'] = 'AI_COLLECTING_SIGNALS'
         user_data[chat_id]['raw_signals'] = []
         ai_welcome = (
-            '<tg-emoji emoji-id="6118457122498814358">💻</tg-emoji> <b>AI FILTER CORE (KIMI v2.6 Engine)</b>\n\n'
+            '<tg-emoji emoji-id="6118457122498814358">💻</tg-emoji> <b>AI FILTER CORE (AI FILTER)</b>\n\n'
             '<tg-emoji emoji-id="6075388783887392362">🚀</tg-emoji> <b>Paste your raw trading signals here in any format.</b>\n'
-            'The engine uses real-time candle data parsing combined with <b>RSI, Support/Resistance & Trend Matrix metrics.</b>\n\n'
+            'The engine uses real-time candle data parsing combined with <b>RSI, Support/Resistance & Trend Filter.</b>\n\n'
             '<i>When you are done sending your list, send</i> /process <i>to start analysis.</i>'
         )
         markup = types.InlineKeyboardMarkup()
@@ -386,7 +389,7 @@ def global_callback_router(call):
         
         body_text = ""
         if not filtered_list:
-            body_text += "<code>No signals matching this matrix density.</code>\n"
+            body_text += "<code>No signals matching this density.</code>\n"
         else:
             body_text += "<code>"
             for sig in filtered_list: 
@@ -396,7 +399,6 @@ def global_callback_router(call):
             
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(
-            types.InlineKeyboardButton("😬 EDIT OUTPUT", callback_data="edit_mode"),
             types.InlineKeyboardButton("⚙️ BACK", callback_data="back_to_mtg"),
             types.InlineKeyboardButton("🚀 HOME", callback_data="go_home")
         )
@@ -470,12 +472,12 @@ def global_callback_router(call):
             user_data[chat_id]['state'] = 'FUTURE_DIR_SELECT'
             markup = types.InlineKeyboardMarkup(row_width=1)
             markup.add(
-                types.InlineKeyboardButton('🟢 BUY Only', callback_data='f_d_1'),
-                types.InlineKeyboardButton('⭕ PUT Only', callback_data='f_d_2'),
-                types.InlineKeyboardButton('🟣 BOTH SIGNALS', callback_data='f_d_3'),
+                types.InlineKeyboardButton('🟢 CALL ONLY', callback_data='f_d_1'),
+                types.InlineKeyboardButton('🔴 PUT ONLY', callback_data='f_d_2'),
+                types.InlineKeyboardButton('🟣 BOTH SIGNAL', callback_data='f_d_3'),
                 types.InlineKeyboardButton('🔙 BACK', callback_data='back_to_pair_select')
             )
-            bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text="📊 <b>SELECT DIRECTION :</b>", reply_markup=markup, parse_mode='HTML')
+            bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text="<tg-emoji emoji-id='6302799249146911743'>📊</tg-emoji> <b>SELECT DIRECTION :</b>", reply_markup=markup, parse_mode='HTML')
         else:
             user_data[chat_id]['action_choice'] = "3"
             user_data[chat_id]['state'] = 'FUTURE_START_TIME'
@@ -543,7 +545,7 @@ def global_text_handler(message):
             return
         new_signals = parse_raw_signals(text)
         user_data[chat_id]['raw_signals'].extend(new_signals)
-        bot.send_message(chat_id, f'<tg-emoji emoji-id="6066872327595892055">🤑</tg-emoji> <b>Added {len(new_signals)} signals. Send /done to execute filters.</b>', parse_mode='HTML')
+        bot.send_message(chat_id, f'<tg-emoji emoji-id="6066872327595892055">🤑</tg-emoji> <b>Added {len(new_signals)} signals. Send /done.</b>', parse_mode='HTML')
         return
 
     if state == 'AI_COLLECTING_SIGNALS':
@@ -559,12 +561,12 @@ def global_text_handler(message):
             
             output_text = (
                 "<b>╔═══════════════╗\n"
-                '<tg-emoji emoji-id="6174544597906102118">👑</tg-emoji>ZEBRONIX AI FILTER OPTIMIZED<tg-emoji emoji-id="6323361327767099558">⭐</tg-emoji>\n'
+                "<tg-emoji emoji-id='6174544597906102118'>👑</tg-emoji>ZEBRONIX AI FILTER OPTIMIZED<tg-emoji emoji-id='6323361327767099558'>⭐</tg-emoji>\n"
                 "╚═══════════════╝</b>\n\n"
                 f"<code>{ai_output}</code>\n\n"
                 "<b>───────────────────</b>\n"
-                '<b><tg-emoji emoji-id="6075388783887392362">🚀</tg-emoji> Channel: @irttradingzone<tg-emoji emoji-id="6172443349581043038">🔥</tg-emoji>\n'
-                '<tg-emoji emoji-id="6134212600138833922">🤖</tg-emoji> Core Powered By: IRT KIMI K2.6 INTELLIGENCE</b>'
+                "<b><tg-emoji emoji-id='6075388783887392362'>🚀</tg-emoji> Channel: @irttradingzone<tg-emoji emoji-id='6172443349581043038'>🔥</tg-emoji>\n"
+                "<tg-emoji emoji-id='6134212600138833922'>🤖</tg-emoji> H4CK By: POWER AI FILTER</b>"
             )
             
             markup = types.InlineKeyboardMarkup()
@@ -575,7 +577,7 @@ def global_text_handler(message):
             
         new_signals = parse_raw_signals(text)
         user_data[chat_id]['raw_signals'].extend(new_signals)
-        bot.send_message(chat_id, f'<tg-emoji emoji-id="6066872327595892055">🤑</tg-emoji> <b>Added {len(new_signals)} signals. Send /process to run Kimi AI Engine.</b>', parse_mode='HTML')
+        bot.send_message(chat_id, f"<tg-emoji emoji-id='6066872327595892055'>🤑</tg-emoji> <b>Added {len(new_signals)} signals. Send /process to run ZEBRONIX AI.</b>", parse_mode='HTML')
         return
 
     if state == 'EDITING_PROCESS':
@@ -642,18 +644,18 @@ def execute_future_generation(chat_id, message_id, filter_days):
     
     output_text = (
         "<b>╔═══════════════╗\n"
-        '<tg-emoji emoji-id="6174544597906102118">👑</tg-emoji>ZEBRONIX GENERATED SIGNAL<tg-emoji emoji-id="6323361327767099558">⭐</tg-emoji>\n'
+        "<tg-emoji emoji-id='6174544597906102118'>👑</tg-emoji>ZEBRONIX GENERATED SIGNAL<tg-emoji emoji-id='6323361327767099558'>⭐</tg-emoji>\n"
         "╚═══════════════╝</b>\n\n"
     )
     
     if market_mode == "BLACKOUT":
-        output_text += f'<b><tg-emoji emoji-id="6312039841219485770">🏆</tg-emoji> Mode: BACKOUT {market_mode} <tg-emoji emoji-id="6174633744247297625">💱</tg-emoji></b>\n'
+        output_text += f"<b><tg-emoji emoji-id='6312039841219485770'>🏆</tg-emoji> Mode: BACKOUT {market_mode} <tg-emoji emoji-id='6174633744247297625'>💱</tg-emoji></b>\n"
     else:
-        output_text += f'<b><tg-emoji emoji-id="6312039841219485770">🏆</tg-emoji> Mode: {market_mode} <tg-emoji emoji-id="6174633744247297625">💱</tg-emoji></b>\n'
+        output_text += f"<b><tg-emoji emoji-id='6312039841219485770'>🏆</tg-emoji> Mode: {market_mode} <tg-emoji emoji-id='6174633744247297625'>💱</tg-emoji></b>\n"
         
     output_text += (
-        f'<b><tg-emoji emoji-id="6174870736247723056">📊</tg-emoji> Days Analyser: {filter_days} Days <tg-emoji emoji-id="6174679425519457351">🔜</tg-emoji>\n'
-        f'<tg-emoji emoji-id="6174514743588426961">🔒</tg-emoji> Time Window: {start_time} - {end_time}</b>\n'
+        f"<b><tg-emoji emoji-id='6174870736247723056'>📊</tg-emoji> Days Analyser: {filter_days} Days <tg-emoji emoji-id='6174679425519457351'>🔜</tg-emoji>\n"
+        f"<tg-emoji emoji-id='6174514743588426961">🔒</tg-emoji> Time Window: {start_time} - {end_time}</b>\n"
         "<b>───────────────────</b>\n"
     )
     
@@ -679,20 +681,20 @@ def execute_future_generation(chat_id, message_id, filter_days):
     
     if market_mode == "BLACKOUT":
         output_text += (
-            f'<b><tg-emoji emoji-id="6132052287423522342">💎</tg-emoji>Total: {len(filtered)}</b>\n\n'
+            f"<b><tg-emoji emoji-id='6132052287423522342'>💎</tg-emoji>Total: {len(filtered)}</b>\n\n"
             "<b>সিগনাল টাইমের আগের কেন্ডেল যে দিকে যাবে তার বিপরিতে এন্ট্রি নিবেন যেমন:</b>\n"
-            '<b><tg-emoji emoji-id="6172215346947166980">➡️</tg-emoji> 00:54 এর আগের কেন্ডেল যদি গ্রিন হয় তাহলে <tg-emoji emoji-id="6066652700148243688">😀</tg-emoji> Down নিবেন।</b>\n'
-            '<b><tg-emoji emoji-id="6172215346947166980">➡️</tg-emoji> 00:54 এর আগের কেন্ডেল যদি রেড হয় তাহলে <tg-emoji emoji-id="6066511369954402964">😀</tg-emoji> Up নিবেন।</b>\n\n'
-            '<b><tg-emoji emoji-id="6172600880391526117">🗓</tg-emoji> Only use these signals in QUOTEX BINARY BROKER</b>\n\n'
+            "<b><tg-emoji emoji-id='6172215346947166980'>➡️</tg-emoji> 00:54 এর আগের কেন্ডেল যদি গ্রিন হয় তাহলে <tg-emoji emoji-id='6066652700148243688'>😀</tg-emoji> Down নিবেন।</b>\n"
+            "<b><tg-emoji emoji-id='6172215346947166980'>➡️</tg-emoji> 00:54 এর আগের কেন্ডেল যদি রেড হয় তাহলে <tg-emoji emoji-id='6066511369954402964'>😀</tg-emoji> Up নিবেন।</b>\n\n"
+            "<b><tg-emoji emoji-id='6172600880391526117'>🗓</tg-emoji> Only use these signals in QUOTEX BINARY BROKER</b>\n\n"
         )
     else:
-        output_text += f'<b><tg-emoji emoji-id="6132052287423522342">💎</tg-emoji>Total: {str(len(filtered)).zfill(2)} | <tg-emoji emoji-id="6311874557993033039">🔼</tg-emoji> CALL: {str(call_count).zfill(2)} | <tg-emoji emoji-id="6312244088389247483">🔽</tg-emoji> PUT: {str(put_count).zfill(2)}</b>\n\n'
+        output_text += f"<b><tg-emoji emoji-id='6132052287423522342'>💎</tg-emoji>Total: {str(len(filtered)).zfill(2)} | <tg-emoji emoji-id='6311874557993033039'>🔼</tg-emoji> CALL: {str(call_count).zfill(2)} | <tg-emoji emoji-id='6312244088389247483'>🔽</tg-emoji> PUT: {str(put_count).zfill(2)}</b>\n\n"
         
     output_text += (
-        '<b><tg-emoji emoji-id="6075388783887392362">🚀</tg-emoji> Channel: @irttradingzone<tg-emoji emoji-id="6172443349581043038">🔥</tg-emoji>\n'
-        '<tg-emoji emoji-id="6174712664271360634">💬</tg-emoji> Owner   : @irtsupport1<tg-emoji emoji-id="6131977683841589337">👑</tg-emoji>\n'
-        '<tg-emoji emoji-id="6066874041287842747">👉</tg-emoji> Admin  : @imtiaz_x_admin\n'
-        '<tg-emoji emoji-id="6134212600138833922">🤖</tg-emoji> Core Powered By: IRT TRADING ZONE</b>'
+        "<b><tg-emoji emoji-id='6075388783887392362'>🚀</tg-emoji> Channel: @irttradingzone<tg-emoji emoji-id='6172443349581043038'>🔥</tg-emoji>\n"
+        "<tg-emoji emoji-id='6174712664271360634'>💬</tg-emoji> Owner   : @irtsupport1<tg-emoji emoji-id='6131977683841589337'>👑</tg-emoji>\n"
+        "<tg-emoji emoji-id='6066874041287842747'>👉</tg-emoji> Admin   : @imtiaz_x_admin<tg-emoji emoji-id='6213134853290860011'>✔️</tg-emoji>\n"
+        "<tg-emoji emoji-id='6134212600138833922'>🤖</tg-emoji> Core Powered By: IRT TRADING ZONE<tg-emoji emoji-id='6213083249258799034'>♦️</tg-emoji></b>"
     )
     
     bot.send_message(chat_id, output_text, parse_mode="HTML", disable_web_page_preview=True)
