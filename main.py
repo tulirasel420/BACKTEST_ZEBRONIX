@@ -85,17 +85,11 @@ def fetch_candle_data(pair, is_otc=False):
     return []
 
 def calculate_rsi_and_trend(candles):
-    """
-    Advanced Logic Engine: RSI, EMA Trend, Support/Resistance & Candle Data Analytics
-    Returns: trend ("UP", "DOWN", "FLAT"), rsi_value, signal_modifier
-    """
     if not candles or len(candles) < 20:
         return "FLAT", 50, 1.0
         
     try:
         closes = [float(c.get('close', c.get('c', 0))) for c in candles[-50:]]
-        highs = [float(c.get('high', c.get('h', 0))) for c in candles[-50:]]
-        lows = [float(c.get('low', c.get('l', 0))) for c in candles[-50:]]
         
         # EMA 20 approximation
         ema_20 = sum(closes[-20:]) / 20
@@ -123,12 +117,12 @@ def calculate_rsi_and_trend(candles):
         
         if last_close > ema_20:
             trend = "UP"
-            if rsi < 40: modifier = 1.4  # Highly oversold in uptrend (Strong Accuracy)
-            elif rsi > 75: modifier = 0.6 # Overbought exhaustion
+            if rsi < 40: modifier = 1.4  
+            elif rsi > 75: modifier = 0.6 
         else:
             trend = "DOWN"
-            if rsi > 60: modifier = 1.4  # Highly overbought in downtrend (Strong Accuracy)
-            elif rsi < 25: modifier = 0.6 # Oversold exhaustion
+            if rsi > 60: modifier = 1.4  
+            elif rsi < 25: modifier = 0.6 
             
         return trend, rsi, modifier
     except:
@@ -187,7 +181,6 @@ def generate_future_signals(valid_markets, start_time, end_time, mode, filter_da
         if end_slot <= start_slot:
             end_slot += timedelta(days=1)
         
-        # High Accuracy Enhanced Strategy Threshold Matrix
         if filter_days <= 5:
             hash_threshold, gap_modifier = 55, 3  
         elif filter_days <= 12:
@@ -198,11 +191,8 @@ def generate_future_signals(valid_markets, start_time, end_time, mode, filter_da
         is_otc = (mode in ["OTC", "BLACKOUT"])
 
         for pair in valid_markets:
-            # Fetch Dynamic Live indicators from endpoints to adjust mathematical accuracy matrix
             candles = fetch_candle_data(pair, is_otc)
             trend, rsi, modifier = calculate_rsi_and_trend(candles)
-            
-            # Boost threshold requirement based on real-time indicator optimization
             dynamic_threshold = hash_threshold * (1.15 if modifier > 1.0 else 0.95)
             
             current_slot = start_slot
@@ -260,9 +250,9 @@ def kimi_ai_filter(signals_list):
         if response.status_code == 200:
             result_json = response.json()
             ai_text = result_json['choices'][0]['message']['content'].strip()
-            # Fixed Line (Syntax Error Resolved)
-            ai_text = re.sub(r'```[a-zA-Z]*\n|
-```', '', ai_text).strip()
+            
+            # [FIXED LINE] হেক্স কোড (\x60) ব্যবহার করা হয়েছে যাতে টেক্সট এডিটর লাইন কেটে না ফেলে
+            ai_text = re.sub(r'\x60\x60\x60[a-zA-Z]*\n|\x60\x60\x60', '', ai_text).strip()
             return ai_text
         else:
             return f"Kimi Core Engine Link Interrupted (Status Code: {response.status_code})"
