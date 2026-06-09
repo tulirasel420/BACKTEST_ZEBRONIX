@@ -24,7 +24,7 @@ def run_web_server():
 # --- Configuration Setup ---
 API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI' 
 ADMIN_ID = '8280240170'                                           
-PASSWORD = 'ZEBRONIX'
+PASSWORD = 'XNX'
 USER_FILE = 'users.txt'
 
 # Gemini AI API Integration
@@ -50,7 +50,7 @@ REAL_PAIRS_PLAIN = [
     'EURAUD', 'GBPAUD', 'GBPCAD', 'AUDCAD'
 ]
 
-# --- Database Helpers (Fixed & Cleaned) ---
+# --- Database Helpers ---
 def save_user(chat_id):
     try:
         if not os.path.exists(USER_FILE):
@@ -59,7 +59,6 @@ def save_user(chat_id):
         with open(USER_FILE, 'r') as f:
             users = f.read().splitlines()
         
-        # ইউজার আইডি অলরেডি ফাইলে না থাকলে নতুন করে সেভ হবে
         if str(chat_id) not in users and str(chat_id).strip() != "":
             with open(USER_FILE, 'a') as f:
                 f.write(f"{chat_id}\n")
@@ -81,10 +80,10 @@ def fetch_candle_data(pair, is_otc=False):
     try:
         if is_otc:
             formatted_pair = pair.replace("-OTC", "_otc")
-            url = f"https://qbtxpoghen-candeldata.poghen.workers.dev/?pairs={formatted_pair}"
+            url = f"[https://qbtxpoghen-candeldata.poghen.workers.dev/?pairs=](https://qbtxpoghen-candeldata.poghen.workers.dev/?pairs=){formatted_pair}"
         else:
             formatted_pair = f"{pair[:3]}/{pair[3:]}"
-            url = f"https://free-candeldata-forex.poghen-dx.workers.dev/?pairs={formatted_pair}&Last_Candle_Data=100"
+            url = f"[https://free-candeldata-forex.poghen-dx.workers.dev/?pairs=](https://free-candeldata-forex.poghen-dx.workers.dev/?pairs=){formatted_pair}&Last_Candle_Data=100"
             
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
@@ -255,13 +254,13 @@ def apply_automated_gaps(signals):
             curr_time = datetime.strptime(sig['time'], '%H:%M')
             if last_time is None:
                 filtered_signals.append(sig)
-                last_time = curr_time
+                last_time = current_time
             else:
                 diff = int((curr_time - last_time).total_seconds() / 60)
                 required_gap = random.choice(allowed_gaps)
                 if diff >= required_gap:
                     filtered_signals.append(sig)
-                    last_time = curr_time
+                    last_time = current_time
 
     elif 16 <= total_signals < 45:
         last_time = None
@@ -270,13 +269,13 @@ def apply_automated_gaps(signals):
             curr_time = datetime.strptime(sig['time'], '%H:%M')
             if last_time is None:
                 filtered_signals.append(sig)
-                last_time = curr_time
+                last_time = current_time
             else:
                 diff = int((curr_time - last_time).total_seconds() / 60)
                 required_gap = random.choice(allowed_gaps)
                 if diff >= required_gap:
                     filtered_signals.append(sig)
-                    last_time = curr_time
+                    last_time = current_time
 
     else:
         last_time = None
@@ -284,12 +283,12 @@ def apply_automated_gaps(signals):
             curr_time = datetime.strptime(sig['time'], '%H:%M')
             if last_time is None:
                 filtered_signals.append(sig)
-                last_time = curr_time
+                last_time = current_time
             else:
                 diff = int((curr_time - last_time).total_seconds() / 60)
                 if diff >= 7:
                     filtered_signals.append(sig)
-                    last_time = curr_time
+                    last_time = current_time
                     
         if len(filtered_signals) > 8:
             filtered_signals = random.sample(filtered_signals, random.randint(7, 8))
@@ -297,7 +296,7 @@ def apply_automated_gaps(signals):
 
     return filtered_signals
 
-# --- Gemini AI Core Processing Engine ---
+# --- Gemini AI Core Processing Engine (Fixed Line 326 Syntax) ---
 def kimi_ai_filter(signals_list):
     if not signals_list:
         return "No signals provided to analyze."
@@ -311,7 +310,7 @@ def kimi_ai_filter(signals_list):
         f"Signals:\n{input_signals}"
     )
     
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){GEMINI_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -323,8 +322,9 @@ def kimi_ai_filter(signals_list):
         if response.status_code == 200:
             result_json = response.json()
             ai_text = result_json['candidates'][0]['content']['parts'][0]['text'].strip()
-            ai_text = re.sub(r'```[a-zA-Z]*\n|
-```', '', ai_text).strip()
+            
+            # [FIXED LINE] স্ট্রিং ফরম্যাট ঠিক করা হয়েছে যাতে SyntaxError না আসে
+            ai_text = re.sub(r'```[a-zA-Z]*\n|```', '', ai_text).strip()
             
             parsed_ai_signals = parse_raw_signals(ai_text)
             final_gap_signals = apply_automated_gaps(parsed_ai_signals)
@@ -381,12 +381,11 @@ def start_command(message):
     bot.send_message(chat_id, '<tg-emoji emoji-id="5429405838345265327">🔓</tg-emoji> <b>Please enter password to access Control Center:</b>', parse_mode='HTML')
     user_data[chat_id] = {'state': 'AWAITING_PASSWORD', 'raw_signals': [], 'selected_pairs': []}
 
-# --- Login & Password Checker (Mofidied to Save User ID upon successful login) ---
+# --- Login & Password Checker ---
 @bot.message_handler(func=lambda m: user_data.get(m.chat.id, {}).get('state') == 'AWAITING_PASSWORD')
 def check_password(message):
     chat_id = message.chat.id
     if message.text.strip() == PASSWORD:
-        # সফলভাবে লগইন করার সাথে সাথে ইউজারের চ্যাট আইডি ডাটাবেজে (users.txt) সেভ হবে
         save_user(chat_id) 
         show_main_dashboard(chat_id)
     else:
@@ -781,7 +780,7 @@ def execute_future_generation(chat_id, message_id, filter_days):
     bot.send_message(chat_id, output_text, parse_mode="HTML", disable_web_page_preview=True)
     show_main_dashboard(chat_id)
 
-# --- Broadcast Feature (Fixed & Highly Optimized) ---
+# --- Broadcast Feature ---
 @bot.message_handler(commands=['broadcast'])
 def broadcast_handler(message):
     if str(message.from_user.id) == str(ADMIN_ID):
@@ -805,7 +804,7 @@ def broadcast_handler(message):
             try:
                 bot.send_message(chat_id=int(user_id), text=msg_text, parse_mode='HTML')
                 success += 1
-                time.sleep(0.05)  # Telegram Flood Limit হ্যান্ডেল করার জন্য বিরতি
+                time.sleep(0.05)  
             except Exception as e:
                 print(f"Failed to send to {user_id}: {e}")
                 failed += 1
