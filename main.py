@@ -24,7 +24,7 @@ def run_web_server():
 # --- Configuration Setup ---
 API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI' 
 ADMIN_ID = '8280240170'                                           
-PASSWORD = 'backtest'
+PASSWORD = 'ZEBRONIX'
 USER_FILE = 'users.txt'
 
 # Gemini AI API Integration
