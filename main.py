@@ -254,8 +254,7 @@ def kimi_ai_filter(signals_list):
         if response.status_code == 200:
             result_json = response.json()
             ai_text = result_json['candidates'][0]['content']['parts'][0]['text'].strip()
-            ai_text = re.sub(r'```[a-zA-Z]*\n|
-```', '', ai_text).strip()
+            ai_text = re.sub(r'```[a-zA-Z]*\n|```', '', ai_text).strip()
             return ai_text
         else:
             return f"Kimi Core Engine Link Interrupted (Status Code: {response.status_code})"
@@ -655,7 +654,7 @@ def execute_future_generation(chat_id, message_id, filter_days):
         
     output_text += (
         f"<b><tg-emoji emoji-id='6174870736247723056'>📊</tg-emoji> Days Analyser: {filter_days} Days <tg-emoji emoji-id='6174679425519457351'>🔜</tg-emoji>\n"
-        f"<tg-emoji emoji-id='6174514743588426961">🔒</tg-emoji> Time Window: {start_time} - {end_time}</b>\n"
+        f"<tg-emoji emoji-id='6174514743588426961'>🔒</tg-emoji> Time Window: {start_time} - {end_time}</b>\n"
         "<b>───────────────────</b>\n"
     )
     
@@ -692,7 +691,7 @@ def execute_future_generation(chat_id, message_id, filter_days):
         
     output_text += (
         "<b><tg-emoji emoji-id='6075388783887392362'>🚀</tg-emoji> Channel: @irttradingzone<tg-emoji emoji-id='6172443349581043038'>🔥</tg-emoji>\n"
-        "<tg-emoji emoji-id='6174712664271360634'>💬</tg-emoji> Owner   : @irtsupport1<tg-emoji emoji-id='6131977683841589337'>👑</tg-emoji>\n"
+        "<b><tg-emoji emoji-id='6174712664271360634'>💬</tg-emoji> Owner   : @irtsupport1<tg-emoji emoji-id='6131977683841589337'>👑</tg-emoji>\n"
         "<tg-emoji emoji-id='6066874041287842747'>👉</tg-emoji> Admin   : @imtiaz_x_admin<tg-emoji emoji-id='6213134853290860011'>✔️</tg-emoji>\n"
         "<tg-emoji emoji-id='6134212600138833922'>🤖</tg-emoji> Core Powered By: IRT TRADING ZONE<tg-emoji emoji-id='6213083249258799034'>♦️</tg-emoji></b>"
     )
