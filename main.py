@@ -27,7 +27,7 @@ PASSWORD = 'backtest'
 USER_FILE = 'users.txt'
 
 # Kimi AI / OpenAI Compatible API Integration
-KIMI_API_KEY = 'sk-DoQESWEepYWpcGnpXthC6My0nhDXda4tmTdH1Fzpkn24gOzE'
+KIMI_API_KEY = 'sk-GLX6UVnx2D2ys4wH2Wvv1YefbYSR0KrZ46CRIBN3amUqcDQk'
 
 bot = telebot.TeleBot(API_TOKEN)
 user_data = {}
