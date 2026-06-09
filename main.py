@@ -16,6 +16,7 @@ def home():
     return 'Zebronix Ultimate Control Center is 100% Online!'
 
 def run_web_server():
+    # Render dynamically assigns a port, falling back to 8080 if local
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
 
@@ -435,7 +436,6 @@ def execute_future_generation(chat_id, message_id, filter_days):
     start_time = data['start_time']
     end_time = data['end_time']
     
-    # এক্সট্রা সব এনিমেশন রিমুভ করে শুধুমাত্র একটি ক্লিন ওয়েটিং স্ট্যাটাস দেওয়া হলো
     bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='<pre>ZEBRONIX RUNNING WAIT <tg-emoji emoji-id="6174917297988179811">⌛</tg-emoji>...</pre>', parse_mode='HTML')
     
     all_signals = generate_future_signals(valid_markets, start_time, end_time, market_mode, filter_days)
@@ -530,7 +530,10 @@ def broadcast_handler(message):
             except: failed += 1
         bot.edit_message_text(chat_id=message.chat.id, message_id=status_msg.message_id, text=f"<tg-emoji emoji-id='6303181741754424089'>📊</tg-emoji> <b>Report:</b>\n\n<tg-emoji emoji-id='6311890389242487133'>✅</tg-emoji> Sent: {success}\n<tg-emoji emoji-id='6312080737898077535'>❌</tg-emoji> Failed: {failed}", parse_mode='HTML')
 
-# --- Main Runtime Guard ---
+# --- Fixed Main Runtime Guard ---
 if __name__ == '__main__':
-    threading.Thread(target=run_web_server, daemon=True).start()
-    bot.infinity_polling()
+    # 1. টেলিগ্রাম বটকে ব্যাকগ্রাউন্ড থ্রেডে পাঠিয়ে দিন
+    threading.Thread(target=bot.infinity_polling, daemon=True).start()
+    
+    # 2. Flask সার্ভারকে মেইন থ্রেডে রান করুন যেন Render সাথে সাথে পোর্ট ডিটেক্ট করতে পারে
+    run_web_server()
