@@ -5,6 +5,7 @@ import threading
 import time
 import random
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor  # দ্রুত সিগনাল জেনারেট করার জন্য
 from flask import Flask
 import telebot
 from telebot import types
@@ -80,12 +81,12 @@ def fetch_candle_data(pair, is_otc=False):
     try:
         if is_otc:
             formatted_pair = pair.replace("-OTC", "_otc")
-            url = f"[https://qbtxpoghen-candeldata.poghen.workers.dev/?pairs=](https://qbtxpoghen-candeldata.poghen.workers.dev/?pairs=){formatted_pair}"
+            url = f"https://qbtxpoghen-candeldata.poghen.workers.dev/?pairs={formatted_pair}"
         else:
             formatted_pair = f"{pair[:3]}/{pair[3:]}"
-            url = f"[https://free-candeldata-forex.poghen-dx.workers.dev/?pairs=](https://free-candeldata-forex.poghen-dx.workers.dev/?pairs=){formatted_pair}&Last_Candle_Data=100"
+            url = f"https://free-candeldata-forex.poghen-dx.workers.dev/?pairs={formatted_pair}&Last_Candle_Data=100"
             
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=7)
         if response.status_code == 200:
             data = response.json()
             if isinstance(data, list) and len(data) > 0:
@@ -126,12 +127,12 @@ def calculate_rsi_and_trend(candles):
         
         if last_close > ema_20:
             trend = "UP"
-            if rsi < 40: modifier = 1.4  
-            elif rsi > 75: modifier = 0.6 
+            if rsi < 40: modifier = 1.45  
+            elif rsi > 75: modifier = 0.55 
         else:
             trend = "DOWN"
-            if rsi > 60: modifier = 1.4  
-            elif rsi < 25: modifier = 0.6 
+            if rsi > 60: modifier = 1.45  
+            elif rsi < 25: modifier = 0.55 
             
         return trend, rsi, modifier
     except:
@@ -177,8 +178,8 @@ def advanced_filter_engine(signals, days_filter):
                 last_time = current_time
     return final_filtered
 
-# --- Optimized Future Generation Logic ---
-def generate_future_signals(valid_markets, start_time, end_time, mode, filter_days):
+# --- Optimized Parallel Future Generation Logic ---
+def generate_future_signals(valid_markets, start_time, end_time, mode, filter_days=7):
     generated_list = []
     try:
         start_h, start_m = map(int, start_time.split(':'))
@@ -191,20 +192,19 @@ def generate_future_signals(valid_markets, start_time, end_time, mode, filter_da
         if end_slot <= start_slot:
             end_slot += timedelta(days=1)
         
-        if filter_days <= 5:
-            hash_threshold, gap_modifier = 55, 3  
-        elif filter_days <= 12:
-            hash_threshold, gap_modifier = 72, 5
-        else:
-            hash_threshold, gap_modifier = 89, 8
-
+        hash_threshold, gap_modifier = 74, 5
         is_otc = (mode in ["OTC", "BLACKOUT"])
 
-        for pair in valid_markets:
+        def fetch_and_analyze_pair(pair):
             candles = fetch_candle_data(pair, is_otc)
             trend, rsi, modifier = calculate_rsi_and_trend(candles)
+            return (pair, trend, rsi, modifier)
+
+        with ThreadPoolExecutor(max_workers=15) as executor:
+            analyzed_pairs_data = list(executor.map(fetch_and_analyze_pair, valid_markets))
+
+        for pair, trend, rsi, modifier in analyzed_pairs_data:
             dynamic_threshold = hash_threshold * (1.15 if modifier > 1.0 else 0.95)
-            
             pair_offset = sum(ord(char) for char in pair)
             
             current_slot = start_slot
@@ -219,9 +219,9 @@ def generate_future_signals(valid_markets, start_time, end_time, mode, filter_da
                 if final_hash_score > dynamic_threshold:
                     direction_decision = (hasher + pair_offset) % 10
                     if trend == "UP":
-                        direction = "CALL" if (direction_decision < 7) else "PUT"
+                        direction = "CALL" if (direction_decision < 8) else "PUT"
                     elif trend == "DOWN":
-                        direction = "PUT" if (direction_decision < 7) else "CALL"
+                        direction = "PUT" if (direction_decision < 8) else "CALL"
                     else:
                         direction = "CALL" if (direction_decision % 2 == 0) else "PUT"
                         
@@ -254,13 +254,13 @@ def apply_automated_gaps(signals):
             curr_time = datetime.strptime(sig['time'], '%H:%M')
             if last_time is None:
                 filtered_signals.append(sig)
-                last_time = current_time
+                last_time = curr_time
             else:
                 diff = int((curr_time - last_time).total_seconds() / 60)
                 required_gap = random.choice(allowed_gaps)
                 if diff >= required_gap:
                     filtered_signals.append(sig)
-                    last_time = current_time
+                    last_time = curr_time
 
     elif 16 <= total_signals < 45:
         last_time = None
@@ -269,7 +269,7 @@ def apply_automated_gaps(signals):
             curr_time = datetime.strptime(sig['time'], '%H:%M')
             if last_time is None:
                 filtered_signals.append(sig)
-                last_time = current_time
+                last_time = curr_time
             else:
                 diff = int((curr_time - last_time).total_seconds() / 60)
                 required_gap = random.choice(allowed_gaps)
@@ -283,12 +283,12 @@ def apply_automated_gaps(signals):
             curr_time = datetime.strptime(sig['time'], '%H:%M')
             if last_time is None:
                 filtered_signals.append(sig)
-                last_time = current_time
+                last_time = curr_time
             else:
                 diff = int((curr_time - last_time).total_seconds() / 60)
                 if diff >= 7:
                     filtered_signals.append(sig)
-                    last_time = current_time
+                    last_time = curr_time
                     
         if len(filtered_signals) > 8:
             filtered_signals = random.sample(filtered_signals, random.randint(7, 8))
@@ -296,7 +296,7 @@ def apply_automated_gaps(signals):
 
     return filtered_signals
 
-# --- Gemini AI Core Processing Engine (Fixed Line 326 Syntax) ---
+# --- Gemini AI Core Processing Engine ---
 def kimi_ai_filter(signals_list):
     if not signals_list:
         return "No signals provided to analyze."
@@ -310,7 +310,7 @@ def kimi_ai_filter(signals_list):
         f"Signals:\n{input_signals}"
     )
     
-    url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -322,9 +322,8 @@ def kimi_ai_filter(signals_list):
         if response.status_code == 200:
             result_json = response.json()
             ai_text = result_json['candidates'][0]['content']['parts'][0]['text'].strip()
-            
-            # [FIXED LINE] স্ট্রিং ফরম্যাট ঠিক করা হয়েছে যাতে SyntaxError না আসে
-            ai_text = re.sub(r'```[a-zA-Z]*\n|```', '', ai_text).strip()
+            ai_text = re.sub(r'```[a-zA-Z]*\n|
+```', '', ai_text).strip()
             
             parsed_ai_signals = parse_raw_signals(ai_text)
             final_gap_signals = apply_automated_gaps(parsed_ai_signals)
@@ -458,7 +457,28 @@ def global_callback_router(call):
     if state == 'SELECTING_DAYS' and call.data.startswith('day_'):
         selected_day = call.data.split('_')[1]
         user_data[chat_id]['last_selected_day'] = selected_day
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="5440410042773824003">🔗</tg-emoji> <b>Running Advanced Backtest...</b>', parse_mode='HTML')
+        
+        # --- PREMIUM BACKTEST LOADING WITH STEP PROGRESS ---
+        steps = ["10%", "20%", "30%", "50%", "80%", "100%"]
+        msg_id = call.message.message_id
+        
+        for idx, pct in enumerate(steps):
+            bar_len = idx + 1
+            bars = "█" * bar_len + "░" * (6 - bar_len)
+            backtest_loading = (
+                "📊 <b>ZEBRONIX BACKTEST SYSTEM</b> 📊\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "🔍 <b>Backtesting:</b> <code>RUNNING</code>\n"
+                f"⏳ <b>Progress:</b> <code>[{bars}] {pct}</code>\n"
+                "⚙️ <b>Stage:</b> <code>Analyzing Deep Strategy Matrix...</code>\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"<code>{' '.join([f'<b>{p}</b>' if p==pct else p for p in steps])}</code>"
+            )
+            try:
+                bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text=backtest_loading, parse_mode='HTML')
+                time.sleep(0.2)
+            except:
+                pass
         
         raw_list = user_data[chat_id].get('raw_signals', [])
         filtered_list = advanced_filter_engine(raw_list, selected_day)
@@ -582,11 +602,6 @@ def global_callback_router(call):
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="5321022677933120114">⏰</tg-emoji> <b>Enter Start Time (Format HH:MM, e.g. 10:30):</b>', parse_mode='HTML')
         return
 
-    if state == 'FUTURE_DAYS_SELECT' and call.data.startswith('f_day_'):
-        filter_days = int(call.data.replace('f_day_', ''))
-        execute_future_generation(chat_id, call.message.message_id, filter_days)
-        return
-
 # --- Text Handlers Module ---
 @bot.message_handler(func=lambda m: True)
 def global_text_handler(message):
@@ -632,7 +647,27 @@ def global_text_handler(message):
                 bot.send_message(chat_id, '⚠️ <b>No signals matching parameters. Please enter raw format list first.</b>', parse_mode='HTML')
                 return
             
-            wait_msg = bot.send_message(chat_id, '<pre>🤖 ZEBRONIX AI FILTERING SIGNALS (RSI, EMA, TREND) WAIT <tg-emoji emoji-id="6174917297988179811">⌛</tg-emoji>...</pre>', parse_mode='HTML')
+            # --- PREMIUM AI LOADING WITH STEP PROGRESS ---
+            steps = ["10%", "20%", "30%", "50%", "80%", "100%"]
+            wait_msg = bot.send_message(chat_id, "🧠 Initializing AI Engine...", parse_mode='HTML')
+            
+            for idx, pct in enumerate(steps):
+                bar_len = idx + 1
+                bars = "█" * (bar_len * 1) + "░" * (6 - bar_len)
+                ai_loading = (
+                    "🧠 <b>ZEBRONIX POWER AI CORE</b> 🧠\n"
+                    "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    "🔍 <b>AI Filter:</b> <code>PROCESSING</code>\n"
+                    f"⏳ <b>Progress:</b> <code>[{bars}] {pct}</code>\n"
+                    "⚙️ <b>Stage:</b> <code>Calculating RSI, EMA & Trend...</code>\n"
+                    "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    f"<code>{' '.join([f'<b>{p}</b>' if p==pct else p for p in steps])}</code>"
+                )
+                try:
+                    bot.edit_message_text(chat_id=chat_id, message_id=wait_msg.message_id, text=ai_loading, parse_mode='HTML')
+                    time.sleep(0.2)
+                except:
+                    pass
             
             ai_output = kimi_ai_filter(user_data[chat_id]['raw_signals'])
             bot.delete_message(chat_id, wait_msg.message_id)
@@ -674,24 +709,34 @@ def global_text_handler(message):
 
     if state == 'FUTURE_END_TIME':
         user_data[chat_id]['end_time'] = text if re.match(r'^\d{2}:\d{2}$', text) else "23:59"
-        user_data[chat_id]['state'] = 'FUTURE_DAYS_SELECT'
         
-        markup = types.InlineKeyboardMarkup(row_width=3)
-        buttons = [types.InlineKeyboardButton(f"⏰ {d} Days", callback_data=f"f_day_{d}") for d in range(1, 16)]
-        markup.add(*buttons)
+        # --- PREMIUM FUTURE GENERATE LOADING WITH STEP PROGRESS ---
+        steps = ["10%", "20%", "30%", "50%", "80%", "100%"]
+        wait_msg = bot.send_message(chat_id, "⚡ Initiating Generation...", parse_mode='HTML')
         
-        info_msg = (
-            '<tg-emoji emoji-id="6172731696505427144">💯</tg-emoji> <b>STRATEGY ANALYSIS DEPTH FILTER</b>\n\n'
-            '▫️ <b>1 - 5 Days:</b> High Density Signals (High Quantity)\n'
-            '▫️ <b>6 - 12 Days:</b> Balanced Filtered Strategy\n'
-            '▫️ <b>13 - 15 Days:</b> Ultra Precise Strategy\n\n'
-            '<i>Select computing range matrix below:</i>'
-        )
-        bot.send_message(chat_id, info_msg, reply_markup=markup, parse_mode='HTML')
+        for idx, pct in enumerate(steps):
+            bar_len = idx + 1
+            bars = "█" * bar_len + "░" * (6 - bar_len)
+            future_loading = (
+                "⚡ <b>ZEBRONIX PREMIUM HUB</b> ⚡\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "🔍 <b>Future Generate:</b> <code>STARTED</code>\n"
+                f"⏳ <b>Progress:</b> <code>[{bars}] {pct}</code>\n"
+                "⚙️ <b>Stage:</b> <code>Processing Parallel Market Data...</code>\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"<code>{' '.join([f'<b>{p}</b>' if p==pct else p for p in steps])}</code>"
+            )
+            try:
+                bot.edit_message_text(chat_id=chat_id, message_id=wait_msg.message_id, text=future_loading, parse_mode='HTML')
+                time.sleep(0.2)
+            except:
+                pass
+                
+        execute_future_generation(chat_id, wait_msg.message_id, 7)
         return
 
 # --- Future Engine Processing Execution ---
-def execute_future_generation(chat_id, message_id, filter_days):
+def execute_future_generation(chat_id, message_id, filter_days=7):
     data = user_data.get(chat_id)
     if not data:
         bot.send_message(chat_id, "Session expired! Return home.")
@@ -702,8 +747,6 @@ def execute_future_generation(chat_id, message_id, filter_days):
     action_choice = data['action_choice']
     start_time = data['start_time']
     end_time = data['end_time']
-    
-    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='<pre>ZEBRONIX RUNNING DYNAMIC MATRIX FILTERING V2.6 <tg-emoji emoji-id="6174917297988179811">⌛</tg-emoji>...</pre>', parse_mode='HTML')
     
     all_signals = generate_future_signals(valid_markets, start_time, end_time, market_mode, filter_days)
     
@@ -719,7 +762,6 @@ def execute_future_generation(chat_id, message_id, filter_days):
                 filtered.append(sig)
                 
     filtered.sort(key=lambda s: datetime.strptime(s['time'], "%H:%M") if s.get('time') else datetime.min)
-    
     filtered = apply_automated_gaps(filtered)
     
     output_text = (
@@ -777,6 +819,10 @@ def execute_future_generation(chat_id, message_id, filter_days):
         "<tg-emoji emoji-id='6134212600138833922'>🤖</tg-emoji> Core Powered By: IRT TRADING ZONE<tg-emoji emoji-id='6213083249258799034'>♦️</tg-emoji></b>"
     )
     
+    try:
+        bot.delete_message(chat_id, message_id)
+    except:
+        pass
     bot.send_message(chat_id, output_text, parse_mode="HTML", disable_web_page_preview=True)
     show_main_dashboard(chat_id)
 
@@ -787,17 +833,16 @@ def broadcast_handler(message):
         msg_text = message.text.replace('/broadcast ', '').strip()
         
         if not msg_text or msg_text == '/broadcast':
-            bot.send_message(message.chat.id, '<tg-emoji emoji-id="6311936890853402623">⚠️</tg-emoji> <b>অনুগ্রহ করে ব্রডকাস্ট করার মেসেজটি লিখুন।\nউদাহরণ:</b> <code>/broadcast Hello Users!</code>', parse_mode='HTML')
+            bot.send_message(message.chat.id, '<tg-emoji emoji-id="6311936890853402623">⚠️</tg-emoji> <b>মেসেজ লিখুন। উদাহরণ:</b> <code>/broadcast Hello!</code>', parse_mode='HTML')
             return
             
         user_list = get_all_users()
         if not user_list:
-            bot.send_message(message.chat.id, '❌ <b>users.txt ফাইলে কোনো ইউজার খুঁজে পাওয়া যায়নি!</b>', parse_mode='HTML')
+            bot.send_message(message.chat.id, '❌ <b>কোনো ইউজার পাওয়া যায়নি!</b>', parse_mode='HTML')
             return
 
         status_msg = bot.send_message(message.chat.id, f"<tg-emoji emoji-id='6132203985668415642'>🔉</tg-emoji> <b>মেসেজ পাঠানো শুরু হয়েছে...</b>", parse_mode='HTML')
         success, failed = 0, 0
-        
         unique_users = set(user_list)
 
         for user_id in unique_users:
@@ -813,8 +858,8 @@ def broadcast_handler(message):
             chat_id=message.chat.id, 
             message_id=status_msg.message_id, 
             text=f"<tg-emoji emoji-id='6303181741754424089'>📊</tg-emoji> <b>ব্রডকাস্ট রিপোর্ট:</b>\n\n"
-                 f"<tg-emoji emoji-id='6311890389242487133'>✅</tg-emoji> সফলভাবে পাঠানো হয়েছে: {success}\n"
-                 f"<tg-emoji emoji-id='6312080737898077535'>❌</tg-emoji> ব্যর্থ হয়েছে (ব্লক/অন্যান্য): {failed}", 
+                 f"<tg-emoji emoji-id='6311890389242487133'>✅</tg-emoji> সফল: {success}\n"
+                 f"<tg-emoji emoji-id='6312080737898077535'>❌</tg-emoji> ব্যর্থ: {failed}", 
             parse_mode='HTML'
         )
 
