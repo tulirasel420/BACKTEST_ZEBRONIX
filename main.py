@@ -22,7 +22,7 @@ def run_web_server():
 # --- Configuration Setup ---
 API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI' 
 ADMIN_ID = 8280240170                                           
-PASSWORD = 'backtest'
+PASSWORD = 'back'
 USER_FILE = 'users.txt'
 
 bot = telebot.TeleBot(API_TOKEN)
@@ -427,13 +427,19 @@ def global_text_handler(message):
         return
 
     if state == 'FUTURE_START_TIME':
-        user_data[chat_id]['start_time'] = text if re.match(r'^\d{2}:\d{2}$', text) else "00:00"
+        if not re.match(r'^\d{2}:\d{2}$', text):
+            bot.send_message(chat_id, "⚠️ <b>Invalid format! Please enter start time in HH:MM format (e.g. 10:30):</b>", parse_mode='HTML')
+            return
+        user_data[chat_id]['start_time'] = text
         user_data[chat_id]['state'] = 'FUTURE_END_TIME'
         bot.send_message(chat_id, "<tg-emoji emoji-id='6323361327767099558'>⭐</tg-emoji> <b>Enter End Time (Format HH:MM, e.g. 18:45):</b>", parse_mode='HTML')
         return
 
     if state == 'FUTURE_END_TIME':
-        user_data[chat_id]['end_time'] = text if re.match(r'^\d{2}:\d{2}$', text) else "23:59"
+        if not re.match(r'^\d{2}:\d{2}$', text):
+            bot.send_message(chat_id, "⚠️ <b>Invalid format! Please enter end time in HH:MM format (e.g. 18:45):</b>", parse_mode='HTML')
+            return
+        user_data[chat_id]['end_time'] = text
         user_data[chat_id]['state'] = 'FUTURE_DAYS_SELECT'
         
         markup = types.InlineKeyboardMarkup(row_width=3)
@@ -441,7 +447,7 @@ def global_text_handler(message):
         markup.add(*buttons)
         markup.add(types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
         
-        info_msg = '<tg-emoji emoji-id="172731696505427144">💯</tg-emoji> <b>FUTURE ANALYSIS DEPTH FILTER</b>\n\n<i>Select computing range matrix below:</i>'
+        info_msg = '<tg-emoji emoji-id="6172731696505427144">💯</tg-emoji> <b>FUTURE ANALYSIS DEPTH FILTER</b>\n\n<i>Select computing range matrix below:</i>'
         bot.send_message(chat_id, info_msg, reply_markup=markup, parse_mode='HTML')
         return
 
