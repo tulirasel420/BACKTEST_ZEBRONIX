@@ -22,7 +22,7 @@ def run_web_server():
 # --- Configuration Setup ---
 API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI' 
 ADMIN_ID = 8280240170                                           
-PASSWORD = 'backtest'
+PASSWORD = 'XNX'
 USER_FILE = 'users.txt'
 
 bot = telebot.TeleBot(API_TOKEN)
@@ -130,7 +130,7 @@ def custom_ai_filter_logic(signals, days):
             filtered.append(sig)
         return filtered
 
-    # --- ৪, ৫, ৬, ৭ দিনের নতুন লজিক: শুরুতে ট্রিম + নির্দিষ্ট মিনিট গ্যাপ ---
+    # --- ৪, ৫, 六, ৭ দিনের নতুন লজিক: শুরুতে ট্রিম + নির্দিষ্ট মিনিট গ্যাপ ---
     else:
         gap_mapping = {4: 4, 5: 6, 6: 8, 7: 12}
         min_gap = gap_mapping.get(days, 5)
@@ -318,7 +318,7 @@ def global_callback_router(call):
         raw_list = user_data[chat_id].get('raw_signals', [])
         filtered_list = custom_ai_filter_logic(raw_list, selected_day)
         
-        header_text = f'<b>🧠 AI FILTER SIGNAL COMPLETED (Day {selected_day})</b>\n<b>━━━━━━━━━━━━━━━━━</b>\n'
+        header_text = f'<b><tg-emoji emoji-id="6300963760513228226">🥳</tg-emoji> AI FILTER SIGNAL COMPLETED (Day {selected_day})</b>\n<b>━━━━━━━━━━━━━━━━━</b>\n'
         body_text = "<code>" + "".join([f"M1;{s['asset'].replace('<','&lt;').replace('>','&gt;')};{s['time']};{s['direction']}\n" for s in filtered_list]) + "</code>" if filtered_list else "<code>No parameters matching clear klines.</code>\n"
         
         markup = types.InlineKeyboardMarkup(row_width=2)
@@ -432,11 +432,11 @@ def global_text_handler(message):
             markup = types.InlineKeyboardMarkup(row_width=3)
             markup.add(*[types.InlineKeyboardButton(f"🗓 Day {i}", callback_data=f'ai_day_{i}') for i in range(1, 8)])
             markup.add(types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
-            bot.send_message(chat_id, '<b>🧠 Select AI Filter Strategy Matrix Depth (Day 1 to 7):</b>\n\n<i>▫️ Day 1-3: Auto Clean Cut Algorithm\n▫️ Day 4-7: Trim & Custom Time Gap Sync</i>', reply_markup=markup, parse_mode='HTML')
+            bot.send_message(chat_id, '<b><tg-emoji emoji-id="6303015509340201177">👑</tg-emoji> Select AI Filter Strategy (Day 1 to 7):</b>\n\n<i><tg-emoji emoji-id="6132037293692691226">🎇</tg-emoji> Day 1-3: Auto Clean Cut Algorithm\n<i><tg-emoji emoji-id="6132037293692691226">🎇</tg-emoji> Day 4-7: Trim & Custom Time Gap Sync</i>', reply_markup=markup, parse_mode='HTML')
             return
         new_signals = parse_raw_signals(text)
         user_data[chat_id]['raw_signals'].extend(new_signals)
-        bot.send_message(chat_id, f'🧠 <b>Added {len(new_signals)} lines to AI Filter Pool. Send /done to process.</b>', parse_mode='HTML')
+        bot.send_message(chat_id, f'<tg-emoji emoji-id="6302799249146911743">📊</tg-emoji> <b>Added {len(new_signals)} lines to AI Filter Pool. Send /done to process.</b>', parse_mode='HTML')
         return
 
     # ফিউচার টাইম হ্যান্ডলারস
