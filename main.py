@@ -22,7 +22,7 @@ def run_web_server():
     app.run(host='0.0.0.0', port=port)
 
 # --- Configuration Setup ---
-API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI' 
+API_TOKEN = '8879399278:AAEPz4f3RJobx7s-Q53AweNtnYkSr8LTH6E' 
 ADMIN_ID = 8280240170                                           
 USER_FILE = 'users.txt'
 KEYS_FILE = 'keys.txt'  # Keys স্টোর করার ফাইল
