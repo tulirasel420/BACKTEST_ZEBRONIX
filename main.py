@@ -48,7 +48,7 @@ API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI'
 
 ADMIN_ID = 8280240170                                           
 
-PASSWORD = 'ZEVRONIX1'
+PASSWORD = 'ZEBRONIX1'
 
 USER_FILE = 'users.txt'
 
@@ -654,9 +654,9 @@ def global_callback_router(call):
 
             '<tg-emoji emoji-id="6276089822490662156">😉</tg-emoji><tg-emoji emoji-id="6278133818901666441">😌</tg-emoji><tg-emoji emoji-id="6276079828101765459">😇</tg-emoji><tg-emoji emoji-id="6275803150603522302">😊</tg-emoji><tg-emoji emoji-id="6275939064843603913">🚀</tg-emoji><tg-emoji emoji-id="6275853229922193308">🅰</tg-emoji><tg-emoji emoji-id="6278459282933419717">🅰</tg-emoji><tg-emoji emoji-id="6276014351325337415">🅰</tg-emoji><tg-emoji emoji-id="6278369556771639533">🅰</tg-emoji>\n\n'
 
-            '<tg-emoji emoji-id="6300758774609092069">🌍</tg-emoji> <b> ORIGINAL BACKTEST MODULE</b>\n\n'
+            '<tg-emoji emoji-id="6300758774609092069">🌍</tg-emoji> <b> BACKTEST MODULE</b>\n\n'
 
-            '<tg-emoji emoji-id="6075388783887392362">🚀</tg-emoji> <b>Paste your raw lines below.</b>\n\n'
+            '<tg-emoji emoji-id="6075388783887392362">🚀</tg-emoji> <b>Paste your signals below.</b>\n\n'
 
             '<i>When completely finished, send</i> <b>/done</b> <i>to compile original data.</i>'
 
