@@ -3,7 +3,7 @@ import re
 import hashlib
 import threading
 import time
-import requests  # ফরেক্স নিউজ API থেকে ডেটা আনার জন্য যুক্ত করা হয়েছে
+import requests  # ফরেক্স নিউজ API থেকে ডেটা আনার জন্য
 from datetime import datetime, timedelta
 from flask import Flask
 import telebot
@@ -23,7 +23,7 @@ def run_web_server():
 # --- Configuration Setup ---
 API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI' 
 ADMIN_ID = 8280240170                                           
-PASSWORD = 'imtiaz'
+PASSWORD = 'ZEBRONIX1'
 USER_FILE = 'users.txt'
 
 # ➡️ আপনার গ্রুপ/চ্যানেল এবং অ্যাডমিন ইউজারনেম কনফিগারেশন
@@ -125,22 +125,23 @@ def custom_ai_filter_logic(signals, days):
     if total_count == 0: return []
 
     if days in [1, 2, 3]:
-        if total_count <= 3: return unique_signals
+        if total_count <= 4: return unique_signals
         start_cut = max(1, int(total_count * 0.15))
         end_cut = max(1, int(total_count * 0.15))
         mid_index = total_count // 2
         
         filtered = []
         for i, sig in enumerate(unique_signals):
-            if i < start_cut or i > (total_count - end_cut): continue
+            if i < start_cut or i >= (total_count - end_cut): continue
             if abs(i - mid_index) <= max(1, int(total_count * 0.05)): continue
             filtered.append(sig)
-        return filtered
+        return filtered if filtered else unique_signals
     else:
         gap_mapping = {4: 4, 5: 6, 6: 8, 7: 12}
         min_gap = gap_mapping.get(days, 5)
         
-        start_trim = max(1, int(total_count * 0.20))
+        # সেফ ট্রিম লজিক: ইনপুট সিগন্যাল কম হলে ট্রিম করবে না, বেশি হলে ট্রিম করবে যেন ক্র্যাশ না করে।
+        start_trim = max(1, int(total_count * 0.20)) if total_count > 5 else 0
         trimmed_signals = unique_signals[start_trim:]
         
         final_filtered = []
@@ -155,7 +156,8 @@ def custom_ai_filter_logic(signals, days):
                 if time_diff >= min_gap:
                     final_filtered.append(sig)
                     last_time = current_time
-        return final_filtered
+        
+        return final_filtered if final_filtered else trimmed_signals
 
 def generate_future_signals(valid_markets, start_time, end_time, mode, filter_days):
     generated_list = []
@@ -225,7 +227,7 @@ def show_main_dashboard(chat_id):
     )
     bot.send_message(chat_id, dashboard_text, reply_markup=markup, parse_mode='HTML')
 
-# --- Live Forex News Core Engine (NEW) ---
+# --- Live Forex News Core Engine ---
 def fetch_and_send_news_signals(chat_id, message_id):
     bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='<pre>Fetching Live News Data <tg-emoji emoji-id=\"6312077782960579315\">🆕</tg-emoji>...</pre>', parse_mode='HTML')
     
