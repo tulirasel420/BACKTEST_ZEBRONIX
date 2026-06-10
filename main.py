@@ -23,7 +23,7 @@ def run_web_server():
 # --- Configuration Setup ---
 API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI' 
 ADMIN_ID = 8280240170                                           
-PASSWORD = 'ZEBRONIX1'
+PASSWORD = 'imtiaz'
 USER_FILE = 'users.txt'
 
 # ➡️ আপনার গ্রুপ/চ্যানেল এবং অ্যাডমিন ইউজারনেম কনফিগারেশন
@@ -140,7 +140,6 @@ def custom_ai_filter_logic(signals, days):
         gap_mapping = {4: 4, 5: 6, 6: 8, 7: 12}
         min_gap = gap_mapping.get(days, 5)
         
-        # সেফ ট্রিম লজিক: ইনপুট সিগন্যাল কম হলে ট্রিম করবে না, বেশি হলে ট্রিম করবে যেন ক্র্যাশ না করে।
         start_trim = max(1, int(total_count * 0.20)) if total_count > 5 else 0
         trimmed_signals = unique_signals[start_trim:]
         
@@ -222,24 +221,24 @@ def show_main_dashboard(chat_id):
     )
     
     dashboard_text = (
-        '<tg-emoji emoji-id="6066435044090583397">💰</tg-emoji> <b>WELCOME TO ZEBRONIX SOFTWARE</b>\n\n'
-        '<tg-emoji emoji-id="6132052287423522342">💎</tg-emoji> <b>Select your operational module below to start:</b>'
+        '💰 <b>WELCOME TO ZEBRONIX SOFTWARE</b>\n\n'
+        '💎 <b>Select your operational module below to start:</b>'
     )
     bot.send_message(chat_id, dashboard_text, reply_markup=markup, parse_mode='HTML')
 
 # --- Live Forex News Core Engine ---
 def fetch_and_send_news_signals(chat_id, message_id):
-    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='<pre>Fetching Live News Data <tg-emoji emoji-id=\"6312077782960579315\">🆕</tg-emoji>...</pre>', parse_mode='HTML')
+    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='<pre>Fetching Live News Data 🆕...</pre>', parse_mode='HTML')
     
     try:
         response = requests.get(NEWS_API_URL, timeout=15)
         if response.status_code != 200:
-            bot.send_message(chat_id, "<tg-emoji emoji-id=\"6312054040381367354\">🕯</tg-emoji> <b>API no data please wait.. (Status Error)</b>", parse_mode='HTML')
+            bot.send_message(chat_id, "🕯 <b>API no data please wait.. (Status Error)</b>", parse_mode='HTML')
             return
             
         data = response.json()
         if data.get("status") != "success" or not data.get("signals"):
-            bot.send_message(chat_id, "<tg-emoji emoji-id=\"6312054040381367354\">🕯</tg-emoji> <b>বর্তমানে কোনো লাইভ নিউজ সিগন্যাল উপলব্ধ নেই।</b>", parse_mode='HTML')
+            bot.send_message(chat_id, "🕯 <b>বর্তমানে কোনো লাইভ নিউজ সিগন্যাল উপলব্ধ নেই।</b>", parse_mode='HTML')
             return
             
         for sig in data["signals"]:
@@ -254,25 +253,25 @@ def fetch_and_send_news_signals(chat_id, message_id):
             forecast = sig.get("forecast", "N/A")
             previous = sig.get("previous", "N/A")
             
-            reaction_emoji = "<tg-emoji emoji-id=\"6311874557993033039\">🔼</tg-emoji>" if "BUY" in direction else "<tg-emoji emoji-id=\"6312244088389247483\">🔽</tg-emoji>"
+            reaction_emoji = "🔼" if "BUY" in direction else "🔽"
             
             news_template = (
-                f'<tg-emoji emoji-id="6132037293692691226">🎇</tg-emoji> <b>Date</b> : {date}\n'
-                f'<tg-emoji emoji-id="6131826698561265458">🎙</tg-emoji> <b>Event</b> : {event}\n'
-                f'<tg-emoji emoji-id="6312054040381367354">🕯</tg-emoji> <b>Pair</b> : {pair}\n'
-                f'<tg-emoji emoji-id="6311921227107671342">⏰</tg-emoji> <b>Time</b> : {time_str} (UTC+06:00)\n'
-                f'<tg-emoji emoji-id="6312196117899517195">🔔</tg-emoji> <b>Entry</b> : {entry_window}\n'
+                f'🎇 <b>Date</b> : {date}\n'
+                f'🎙 <b>Event</b> : {event}\n'
+                f'🕯 <b>Pair</b> : {pair}\n'
+                f'⏰ <b>Time</b> : {time_str} (UTC+06:00)\n'
+                f'🔔 <b>Entry</b> : {entry_window}\n'
                 f"━━━━━━━ [ DIRECTION ] ━━━━━━━\n"
-                f'<tg-emoji emoji-id="6311943144325783428">😬</tg-emoji> <b>Reaction</b> : {direction} {reaction_emoji}\n'
+                f'😬 <b>Reaction</b> : {direction} {reaction_emoji}\n'
                 f"━━━━━━━ [ MTG 1 STEP ] ━━━━━━━\n"
-                f'<tg-emoji emoji-id="6311864288726228831">💯</tg-emoji> <b>Confirmation</b> : {confirmation} Verified\n'
-                f'<tg-emoji emoji-id="6300609412826406453">😍</tg-emoji> <b>Impact</b> : {impact}-Volatility\n'
-                f'<tg-emoji emoji-id="6300781159978639271">💌</tg-emoji> <b>Rules</b> : Contact Owner {OWNER_USERNAME} <tg-emoji emoji-id=\"6300666179409157866\">✅</tg-emoji>\n'
-                f'<tg-emoji emoji-id="6303181741754424089">📊</tg-emoji> <b>Note</b> : Don\'t use full balance news always risky\n'
-                f'<tg-emoji emoji-id="6300603412757093500">📊</tg-emoji>Forecast: {forecast} | Prev: {previous}<tg-emoji emoji-id="6300810288446840855">📉</tg-emoji>\n'
-                f'<tg-emoji emoji-id="6302799249146911743">📊</tg-emoji>1 Step Martingale Signals\n'
-                f'<tg-emoji emoji-id="6303243301520678287">❗️</tg-emoji> Manage Risk Properly <tg-emoji emoji-id="6303178164046666974">⚠️</tg-emoji>\n\n'
-                f'<tg-emoji emoji-id="6300570740940874222">🚀</tg-emoji><b>Powered by {POWERED_BY}</b>'
+                f'💯 <b>Confirmation</b> : {confirmation} Verified\n'
+                f'😍 <b>Impact</b> : {impact}-Volatility\n'
+                f'💌 <b>Rules</b> : Contact Owner {OWNER_USERNAME} ✅\n'
+                f'📊 <b>Note</b> : Don\'t use full balance news always risky\n'
+                f'📊 Forecast: {forecast} | Prev: {previous} 📉\n'
+                f'📊 1 Step Martingale Signals\n'
+                f'❗️ Manage Risk Properly ⚠️\n\n'
+                f'🚀 <b>Powered by {POWERED_BY}</b>'
             )
             bot.send_message(chat_id, news_template, parse_mode='HTML')
             time.sleep(0.4)
@@ -281,10 +280,10 @@ def fetch_and_send_news_signals(chat_id, message_id):
         end_markup.add(types.InlineKeyboardButton("🏠 MAIN DASHBOARD", callback_data="go_home"))
         
         credit_text = (
-            f'<tg-emoji emoji-id="6303181741754424089">📊</tg-emoji> <b>Channel: {CHANNEL_USERNAME}\n'
-            f'<tg-emoji emoji-id="6303015509340201177">👑</tg-emoji> Owner   : {OWNER_USERNAME}\n'
-            f'<tg-emoji emoji-id="6303081480037866015">🍾</tg-emoji> Admin  : {ADMIN_USERNAME}\n'
-            f'<tg-emoji emoji-id="6300924843814558816">☄️</tg-emoji> Powered By: {POWERED_BY}</b>'
+            f'📊 <b>Channel: {CHANNEL_USERNAME}\n'
+            f'👑 Owner   : {OWNER_USERNAME}\n'
+            f'🍾 Admin  : {ADMIN_USERNAME}\n'
+            f'☄️ Powered By: {POWERED_BY}</b>'
         )
         bot.send_message(chat_id, credit_text, reply_markup=end_markup, parse_mode='HTML')
 
@@ -296,7 +295,7 @@ def fetch_and_send_news_signals(chat_id, message_id):
 def start_command(message):
     chat_id = message.chat.id
     save_user(chat_id)
-    bot.send_message(chat_id, '<tg-emoji emoji-id="5429405838345265327">🔓</tg-emoji> <b>Please enter password to access Control Center:</b>', parse_mode='HTML')
+    bot.send_message(chat_id, '🔓 <b>Please enter password to access Control Center:</b>', parse_mode='HTML')
     user_data[chat_id] = {'state': 'AWAITING_PASSWORD', 'raw_signals': [], 'selected_pairs': []}
 
 @bot.message_handler(func=lambda m: user_data.get(m.chat.id, {}).get('state') == 'AWAITING_PASSWORD')
@@ -305,7 +304,7 @@ def check_password(message):
     if message.text.strip() == PASSWORD:
         show_main_dashboard(chat_id)
     else:
-        bot.send_message(chat_id, '<tg-emoji emoji-id="6066584947039148700">⚠️</tg-emoji> <b>Wrong Password! Try again.</b>', parse_mode='HTML')
+        bot.send_message(chat_id, '⚠️ <b>Wrong Password! Try again.</b>', parse_mode='HTML')
 
 # --- Core Inline Router Hub ---
 @bot.callback_query_handler(func=lambda call: True)
@@ -325,9 +324,9 @@ def global_callback_router(call):
         user_data[chat_id]['state'] = 'COLLECTING_BACKTEST'
         user_data[chat_id]['raw_signals'] = []  
         welcome_text = (
-            '<tg-emoji emoji-id="6276089822490662156">😉</tg-emoji><tg-emoji emoji-id="6278133818901666441">😌</tg-emoji><tg-emoji emoji-id="6276079828101765459">😇</tg-emoji><tg-emoji emoji-id="6275803150603522302">😊</tg-emoji><tg-emoji emoji-id="6275939064843603913">🚀</tg-emoji><tg-emoji emoji-id="6275853229922193308">🅰</tg-emoji><tg-emoji emoji-id="6278459282933419717">🅰</tg-emoji><tg-emoji emoji-id="6276014351325337415">🅰</tg-emoji><tg-emoji emoji-id="6278369556771639533">🅰</tg-emoji>\n\n'
-            '<tg-emoji emoji-id="6300758774609092069">🌍</tg-emoji> <b> ORIGINAL BACKTEST MODULE</b>\n\n'
-            '<tg-emoji emoji-id="6075388783887392362">🚀</tg-emoji> <b>Paste your raw lines below.</b>\n\n'
+            '😉 😌 😇 😊 🚀 🅰 🅰 🅰 🅰\n\n'
+            '🌍 <b> ORIGINAL BACKTEST MODULE</b>\n\n'
+            '🚀 <b>Paste your raw lines below.</b>\n\n'
             '<i>When completely finished, send</i> <b>/done</b> <i>to compile original data.</i>'
         )
         markup = types.InlineKeyboardMarkup()
@@ -339,8 +338,8 @@ def global_callback_router(call):
         user_data[chat_id]['state'] = 'COLLECTING_AI_FILTER'
         user_data[chat_id]['raw_signals'] = []  
         welcome_text = (
-            '<tg-emoji emoji-id="1134212600138833922">🧠</tg-emoji> <b>AI FILTER SIGNAL MODULE</b>\n\n'
-            '<tg-emoji emoji-id="6075388783887392362">🚀</tg-emoji> <b>Paste your signal lines below.</b>\n\n'
+            '🧠 <b>AI FILTER SIGNAL MODULE</b>\n\n'
+            '🚀 <b>Paste your signal lines below.</b>\n\n'
             '<i>When completely finished, send</i> <b>/done</b> <i>to apply math cut filters.</i>'
         )
         markup = types.InlineKeyboardMarkup()
@@ -357,17 +356,17 @@ def global_callback_router(call):
             types.InlineKeyboardButton('🥷 BLACKOUT SIGNALS', callback_data='f_m_BLACKOUT'),
             types.InlineKeyboardButton('🏠 HOME', callback_data='go_home')
         )
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="6073116733302906931">⛈</tg-emoji> <b>SELECT TARGET MARKET TYPE FROM BELOW:</b>', reply_markup=markup, parse_mode='HTML')
+        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='⛈ <b>SELECT TARGET MARKET TYPE FROM BELOW:</b>', reply_markup=markup, parse_mode='HTML')
         return
 
     if state == 'DAYS_SELECT_BACKTEST' and call.data.startswith('b_day_'):
         selected_day = call.data.split('_')[2]
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="5440410042773824003">🔗</tg-emoji> <b>Running Original Backtest Engine...</b>', parse_mode='HTML')
+        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='🔗 <b>Running Original Backtest Engine...</b>', parse_mode='HTML')
         
         raw_list = user_data[chat_id].get('raw_signals', [])
         filtered_list = original_backtest_engine(raw_list, selected_day)
         
-        header_text = f'<b><tg-emoji emoji-id="6172600880391526117">🗓</tg-emoji> BACKTEST COMPLETED (Day {selected_day})</b>\n<b>━━━━━━━━━━━━━━━━━</b>\n'
+        header_text = f'<b>🗓 BACKTEST COMPLETED (Day {selected_day})</b>\n<b>━━━━━━━━━━━━━━━━━</b>\n'
         body_text = "<code>" + "".join([f"M1;{s['asset'].replace('<','&lt;').replace('>','&gt;')};{s['time']};{s['direction']}\n" for s in filtered_list]) + "</code>" if filtered_list else "<code>No matching setups.</code>\n"
         
         markup = types.InlineKeyboardMarkup(row_width=2)
@@ -385,12 +384,12 @@ def global_callback_router(call):
 
     if state == 'DAYS_SELECT_AI_FILTER' and call.data.startswith('ai_day_'):
         selected_day = call.data.split('_')[2]
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="5440410042773824003">🔗</tg-emoji> <b>Running AI Filter Matrix Processing...</b>', parse_mode='HTML')
+        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='🔗 <b>Running AI Filter Matrix Processing...</b>', parse_mode='HTML')
         
         raw_list = user_data[chat_id].get('raw_signals', [])
         filtered_list = custom_ai_filter_logic(raw_list, selected_day)
         
-        header_text = f'<b><tg-emoji emoji-id="6300963760513228226">🥳</tg-emoji> AI FILTER SIGNAL COMPLETED (Day {selected_day})</b>\n<b>━━━━━━━━━━━━━━━━━</b>\n'
+        header_text = f'<b>🥳 AI FILTER SIGNAL COMPLETED (Day {selected_day})</b>\n<b>━━━━━━━━━━━━━━━━━</b>\n'
         body_text = "<code>" + "".join([f"M1;{s['asset'].replace('<','&lt;').replace('>','&gt;')};{s['time']};{s['direction']}\n" for s in filtered_list]) + "</code>" if filtered_list else "<code>No parameters matching clear klines.</code>\n"
         
         markup = types.InlineKeyboardMarkup(row_width=2)
@@ -413,7 +412,7 @@ def global_callback_router(call):
         user_data[chat_id]['state'] = 'FUTURE_GRID_SELECTING'
         
         keyboard = make_pair_selection_keyboard([], mode)
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="6066485535726118367">⬇️</tg-emoji> <b>TAP PAIRS FROM GRID TO SELECT / UNSELECT:</b>', reply_markup=keyboard, parse_mode='HTML')
+        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='⬇️ <b>TAP PAIRS FROM GRID TO SELECT / UNSELECT:</b>', reply_markup=keyboard, parse_mode='HTML')
         return
 
     if state == 'FUTURE_GRID_SELECTING' and call.data.startswith('toggle_'):
@@ -428,7 +427,7 @@ def global_callback_router(call):
         keyboard = make_pair_selection_keyboard(current_selections, mode)
         
         pairs_formatted = ", ".join(current_selections) if current_selections else "None"
-        display_text = f'<tg-emoji emoji-id="6066485535726118367">⬇️</tg-emoji> <b>TAP PAIRS FROM GRID TO SELECT / UNSELECT:</b>\n\n<tg-emoji emoji-id="6311890389242487133">✅</tg-emoji> <b>Selected:</b> <code>{pairs_formatted}</code>'
+        display_text = f'⬇️ <b>TAP PAIRS FROM GRID TO SELECT / UNSELECT:</b>\n\n✅ <b>Selected:</b> <code>{pairs_formatted}</code>'
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=display_text, reply_markup=keyboard, parse_mode='HTML')
         return
 
@@ -448,18 +447,18 @@ def global_callback_router(call):
                 types.InlineKeyboardButton('🔵 BOTH', callback_data='f_d_3'),
                 types.InlineKeyboardButton('🏠 HOME', callback_data='go_home')
             )
-            bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="6212777095400006386">💱</tg-emoji> <b>SELECT DIRECTION :</b>', reply_markup=markup, parse_mode='HTML')
+            bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='💱 <b>SELECT DIRECTION :</b>', reply_markup=markup, parse_mode='HTML')
         else:
             user_data[chat_id]['action_choice'] = "3"
             user_data[chat_id]['state'] = 'FUTURE_START_TIME'
-            bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="5321022677933120114">⏰</tg-emoji> <b>Enter Start Time (Format HH:MM, e.g. 10:30):</b>', parse_mode='HTML')
+            bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='⏰ <b>Enter Start Time (Format HH:MM, e.g. 10:30):</b>', parse_mode='HTML')
         return
 
     if state == 'FUTURE_DIR_SELECT' and call.data.startswith('f_d_'):
         choice = call.data.replace('f_d_', '')
         user_data[chat_id]['action_choice'] = choice
         user_data[chat_id]['state'] = 'FUTURE_START_TIME'
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="5321022677933120114">⏰</tg-emoji> <b>Enter Start Time (Format HH:MM, e.g. 10:30):</b>', parse_mode='HTML')
+        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='⏰ <b>Enter Start Time (Format HH:MM, e.g. 10:30):</b>', parse_mode='HTML')
         return
 
     if state == 'FUTURE_DAYS_SELECT' and call.data.startswith('f_day_'):
@@ -485,11 +484,11 @@ def global_text_handler(message):
             markup = types.InlineKeyboardMarkup(row_width=3)
             markup.add(*[types.InlineKeyboardButton(f"🗓 Day {i}", callback_data=f'b_day_{i}') for i in range(1, 8)])
             markup.add(types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
-            bot.send_message(chat_id, '<b><tg-emoji emoji-id="6066652700148243688">😀</tg-emoji> Select Backtest Strategy (Day 1 to 7):</b>', reply_markup=markup, parse_mode='HTML')
+            bot.send_message(chat_id, '<b>😀 Select Backtest Strategy (Day 1 to 7):</b>', reply_markup=markup, parse_mode='HTML')
             return
         new_signals = parse_raw_signals(text)
         user_data[chat_id]['raw_signals'].extend(new_signals)
-        bot.send_message(chat_id, f'<tg-emoji emoji-id="6312039841219485770">🏆</tg-emoji> <b>Added {len(new_signals)} Backtest Signal Send /done.</b>', parse_mode='HTML')
+        bot.send_message(chat_id, f'🏆 <b>Added {len(new_signals)} Backtest Signal Send /done.</b>', parse_mode='HTML')
         return
 
     if state == 'COLLECTING_AI_FILTER':
@@ -501,11 +500,11 @@ def global_text_handler(message):
             markup = types.InlineKeyboardMarkup(row_width=3)
             markup.add(*[types.InlineKeyboardButton(f"🗓 Day {i}", callback_data=f'ai_day_{i}') for i in range(1, 8)])
             markup.add(types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
-            bot.send_message(chat_id, '<tg-emoji emoji-id="6303015509340201177">👑</tg-emoji> <b>Select AI Filter Strategy (Day 1 to 7):</b>\n\n<i><tg-emoji emoji-id="6132037293692691226">🎇</tg-emoji> Day 1-3: Auto Clean Cut Algorithm</i>\n<i><tg-emoji emoji-id="6132037293692691226">🎇</tg-emoji> Day 4-7: Trim & Custom Time Gap Sync</i>', reply_markup=markup, parse_mode='HTML')
+            bot.send_message(chat_id, '👑 <b>Select AI Filter Strategy (Day 1 to 7):</b>\n\n<i>🎇 Day 1-3: Auto Clean Cut Algorithm</i>\n<i>🎇 Day 4-7: Trim & Custom Time Gap Sync</i>', reply_markup=markup, parse_mode='HTML')
             return
         new_signals = parse_raw_signals(text)
         user_data[chat_id]['raw_signals'].extend(new_signals)
-        bot.send_message(chat_id, f'<tg-emoji emoji-id="6302799249146911743">📊</tg-emoji> <b>Added {len(new_signals)} to AI Filter Send /done to process.</b>', parse_mode='HTML')
+        bot.send_message(chat_id, f'📊 <b>Added {len(new_signals)} to AI Filter Send /done to process.</b>', parse_mode='HTML')
         return
 
     if state == 'FUTURE_START_TIME':
@@ -514,7 +513,7 @@ def global_text_handler(message):
             return
         user_data[chat_id]['start_time'] = text
         user_data[chat_id]['state'] = 'FUTURE_END_TIME'
-        bot.send_message(chat_id, "<tg-emoji emoji-id='6323361327767099558'>⭐</tg-emoji> <b>Enter End Time (Format HH:MM, e.g. 18:45):</b>", parse_mode='HTML')
+        bot.send_message(chat_id, "⭐ <b>Enter End Time (Format HH:MM, e.g. 18:45):</b>", parse_mode='HTML')
         return
 
     if state == 'FUTURE_END_TIME':
@@ -529,7 +528,7 @@ def global_text_handler(message):
         markup.add(*buttons)
         markup.add(types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
         
-        info_msg = '<tg-emoji emoji-id="6172731696505427144">💯</tg-emoji> <b>FUTURE DAYS FILTER</b>\n\n<i>Select Day Analyses tap below:</i>'
+        info_msg = '💯 <b>FUTURE DAYS FILTER</b>\n\n<i>Select Day Analyses tap below:</i>'
         bot.send_message(chat_id, info_msg, reply_markup=markup, parse_mode='HTML')
         return
 
@@ -544,7 +543,7 @@ def execute_future_generation(chat_id, message_id, filter_days):
     start_time = data['start_time']
     end_time = data['end_time']
     
-    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='<pre>ZEBRONIX RUNNING WAIT <tg-emoji emoji-id="6174917297988179811">⌛</tg-emoji>...</pre>', parse_mode='HTML')
+    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='<pre>ZEBRONIX RUNNING WAIT ⌛...</pre>', parse_mode='HTML')
     all_signals = generate_future_signals(valid_markets, start_time, end_time, market_mode, filter_days)
     
     filtered = []
@@ -557,8 +556,8 @@ def execute_future_generation(chat_id, message_id, filter_days):
                 
     filtered.sort(key=lambda s: datetime.strptime(s['time'], "%H:%M") if s.get('time') else datetime.min)
     
-    output_text = "<b>╔═══════════════╗\n<tg-emoji emoji-id='6174544597906102118'>👑</tg-emoji>ZEBRONIX GENERATED SIGNAL<tg-emoji emoji-id='6323361327767099558'>⭐</tg-emoji>\n╚═══════════════╝</b>\n\n"
-    output_text += f'<b><tg-emoji emoji-id="6213083249258799034">♦️</tg-emoji> Mode: {market_mode}\n<tg-emoji emoji-id="6303076304602274890">🗓</tg-emoji> Days Analyser: {filter_days} Days\n<tg-emoji emoji-id="6174514743588426961">🔒</tg-emoji> Time Window: {start_time} - {end_time}</b>\n<b>───────────────────</b>\n'
+    output_text = "<b>╔═══════════════╗\n👑 ZEBRONIX GENERATED SIGNAL ⭐\n╚═══════════════╝</b>\n\n"
+    output_text += f'<b>♦️ Mode: {market_mode}\n🗓 Days Analyser: {filter_days} Days\n🔒 Time Window: {start_time} - {end_time}</b>\n<b>───────────────────</b>\n'
     
     call_count, put_count = 0, 0
     if not filtered: output_text += "<code>No setups match current algorithm parameters.</code>\n"
@@ -577,11 +576,11 @@ def execute_future_generation(chat_id, message_id, filter_days):
                 
     output_text += "<b>───────────────────</b>\n"
     if market_mode == "BLACKOUT":
-        output_text += f'<b><tg-emoji emoji-id="6132052287423522342">💎</tg-emoji>Total: {len(filtered)}</b>\n\n<b>সিগনাল টাইমের আগের কেন্ডেল যে দিকে যাবে তার বিপরিতে এন্ট্রি নিবেন যেমন:</b>\n<b><tg-emoji emoji-id="6210635890994192211">🔗</tg-emoji> 00:54 এর আগের কেন্ডেল যদি গ্রিন হয় তাহলে Down নিবেন।</b>\n<b><tg-emoji emoji-id="6210635890994192211">🔗</tg-emoji> 00:54 এর আগের কেন্ডেল যদি রেড হয় তাহলে Up নিবেন।</b>\n\n'
+        output_text += f'<b>💎 Total: {len(filtered)}</b>\n\n<b>সিগনাল টাইমের আগের কেন্ডেল যে দিকে যাবে তার বিপরিতে এন্ট্রি নিবেন যেমন:</b>\n<b>🔗 00:54 এর আগের কেন্ডেল যদি গ্রিন হয় তাহলে Down নিবেন।</b>\n<b>🔗 00:54 এর আগের কেন্ডেল যদি রেড হয় তাহলে Up নিবেন।</b>\n\n'
     else:
-        output_text += f'<b><tg-emoji emoji-id="6132052287423522342">💎</tg-emoji>Total: {str(len(filtered)).zfill(2)} | <tg-emoji emoji-id="6311874557993033039">🔼</tg-emoji> CALL: {str(call_count).zfill(2)} | <tg-emoji emoji-id="6312244088389247483">🔽</tg-emoji>PUT: {str(put_count).zfill(2)}</b>\n\n'
+        output_text += f'<b>💎 Total: {str(len(filtered)).zfill(2)} | 🔼 CALL: {str(call_count).zfill(2)} | 🔽 PUT: {str(put_count).zfill(2)}</b>\n\n'
         
-    output_text += f'<b><tg-emoji emoji-id="6075388783887392362">🚀</tg-emoji> Channel: {CHANNEL_USERNAME}\n<tg-emoji emoji-id="6312351947902952139">🚀</tg-emoji> Owner   : {OWNER_USERNAME}\n<tg-emoji emoji-id="6300679098670784062">⚙️</tg-emoji> Admin  : {ADMIN_USERNAME}\n<tg-emoji emoji-id="6300963760513228226">🥳</tg-emoji> Powered By: {POWERED_BY}</b>'
+    output_text += f'<b>🚀 Channel: {CHANNEL_USERNAME}\n🚀 Owner   : {OWNER_USERNAME}\n⚙️ Admin  : {ADMIN_USERNAME}\n🥳 Powered By: {POWERED_BY}</b>'
     
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("🏠 MAIN DASHBOARD", callback_data="go_home"))
