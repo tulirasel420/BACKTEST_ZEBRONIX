@@ -22,7 +22,7 @@ def run_web_server():
 # --- Configuration Setup ---
 API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI' 
 ADMIN_ID = 8280240170                                           
-PASSWORD = 'xnx'
+PASSWORD = 'back'
 USER_FILE = 'users.txt'
 
 bot = telebot.TeleBot(API_TOKEN)
@@ -203,7 +203,7 @@ def show_main_dashboard(chat_id):
     
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(
-        types.InlineKeyboardButton('📊 AI BACKTEST ENGINE', callback_data='btn_backtest_mode'),
+        types.InlineKeyboardButton('📊 BACKTEST MODULE', callback_data='btn_backtest_mode'),
         types.InlineKeyboardButton('🧠 AI FILTER SIGNAL', callback_data='btn_ai_filter_mode'),
         types.InlineKeyboardButton('🤖 FUTURE GENERATOR', callback_data='btn_future_mode')
     )
@@ -245,7 +245,8 @@ def global_callback_router(call):
         user_data[chat_id]['raw_signals'] = []  
         welcome_text = (
             '<tg-emoji emoji-id="6276089822490662156">😉</tg-emoji><tg-emoji emoji-id="6278133818901666441">😌</tg-emoji><tg-emoji emoji-id="6276079828101765459">😇</tg-emoji><tg-emoji emoji-id="6275803150603522302">😊</tg-emoji><tg-emoji emoji-id="6275939064843603913">🚀</tg-emoji><tg-emoji emoji-id="6275853229922193308">🅰</tg-emoji><tg-emoji emoji-id="6278459282933419717">🅰</tg-emoji><tg-emoji emoji-id="6276014351325337415">🅰</tg-emoji><tg-emoji emoji-id="6278369556771639533">🅰</tg-emoji>\n'
-            '<tg-emoji emoji-id="6300758774609092069">🌍</tg-emoji> <b> ORIGINAL BACKTEST MODULE</b>\n\n'
+           
+            '<tg-emoji emoji-id="6300758774609092069">🌍</tg-emoji> <b> BACKTEST MODULE</b>\n\n'
             '<tg-emoji emoji-id="6075388783887392362">🚀</tg-emoji> <b>Paste your raw lines below.</b>\n\n'
             '<i>When completely finished, send</i> <b>/done</b> <i>to compile original data.</i>'
         )
