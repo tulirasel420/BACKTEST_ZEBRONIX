@@ -3,7 +3,7 @@ import re
 import hashlib
 import threading
 import time
-import requests  # ফরেক্স নিউজ API থেকে ডেটা আনার জন্য
+import requests
 from datetime import datetime, timedelta
 from flask import Flask
 import telebot
@@ -23,16 +23,14 @@ def run_web_server():
 # --- Configuration Setup ---
 API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI' 
 ADMIN_ID = 8280240170                                           
-PASSWORD = 'AI123'
+PASSWORD = 'ZEBRONIX1'
 USER_FILE = 'users.txt'
 
-# ➡️ আপনার গ্রুপ/চ্যানেল এবং অ্যাডমিন ইউজারনেম কনফিগারেশন
 CHANNEL_USERNAME = '@irttradingzone'
 OWNER_USERNAME = '@irtsupport1'
 ADMIN_USERNAME = '@imtiaz_x_admin'
-POWERED_BY = 'ZEBRONIX SOFTWARE'
+POWERED_BY = 'ZEBRONIX NEWS'
 
-# ➡️ ফরেক্স নিউজ জেনারেট করার workers.dev API URL
 NEWS_API_URL = 'https://forexkiller-newsproby.poghen-dx.workers.dev' 
 
 bot = telebot.TeleBot(API_TOKEN)
@@ -109,11 +107,15 @@ def original_backtest_engine(signals, days_filter):
                 last_time = current_time
     return final_filtered
 
+# --- UPDATED AI FILTER LOGIC ---
 def custom_ai_filter_logic(signals, days):
     if not signals: return []
+    
+    # সময় অনুযায়ী সাজানো
     signals.sort(key=lambda x: datetime.strptime(x['time'], '%H:%M'))
     days = int(days)
     
+    # ডুপ্লিকেট সময় ফিল্টার করা
     unique_signals = []
     seen_times = set()
     for sig in signals:
@@ -124,40 +126,32 @@ def custom_ai_filter_logic(signals, days):
     total_count = len(unique_signals)
     if total_count == 0: return []
 
-    if days in [1, 2, 3]:
-        if total_count <= 4: return unique_signals
-        start_cut = max(1, int(total_count * 0.15))
-        end_cut = max(1, int(total_count * 0.15))
-        mid_index = total_count // 2
+    # উন্নত ফিল্টারিং প্যারামিটার (দিন অনুযায়ী গ্যাপ সেট করা)
+    gap_matrix = {1: 3, 2: 4, 3: 5, 4: 6, 5: 8, 6: 10, 7: 12}
+    min_gap = gap_matrix.get(days, 5)
+    
+    final_filtered = []
+    last_time = None
+    
+    # অ্যালগরিদম: সিগন্যাল টাইম গ্যাপ এবং কনসিস্টেন্সি চেক
+    for sig in unique_signals:
+        current_time = datetime.strptime(sig['time'], '%H:%M')
         
-        filtered = []
-        for i, sig in enumerate(unique_signals):
-            if i < start_cut or i >= (total_count - end_cut): continue
-            if abs(i - mid_index) <= max(1, int(total_count * 0.05)): continue
-            filtered.append(sig)
-        return filtered if filtered else unique_signals
-    else:
-        gap_mapping = {4: 4, 5: 6, 6: 8, 7: 12}
-        min_gap = gap_mapping.get(days, 5)
-        
-        # সেফ ট্রিম লজিক: ইনপুট সিগন্যাল কম হলে ট্রিম করবে না, বেশি হলে ট্রিম করবে যেন ক্র্যাশ না করে।
-        start_trim = max(1, int(total_count * 0.20)) if total_count > 5 else 0
-        trimmed_signals = unique_signals[start_trim:]
-        
-        final_filtered = []
-        last_time = None
-        for sig in trimmed_signals:
-            current_time = datetime.strptime(sig['time'], '%H:%M')
-            if last_time is None:
+        if last_time is None:
+            final_filtered.append(sig)
+            last_time = current_time
+        else:
+            time_diff = int((current_time - last_time).total_seconds() / 60)
+            # গ্যাপ চেক এবং সিগন্যাল স্থায়িত্ব নিশ্চিত করা
+            if time_diff >= min_gap:
                 final_filtered.append(sig)
                 last_time = current_time
-            else:
-                time_diff = int((current_time - last_time).total_seconds() / 60)
-                if time_diff >= min_gap:
-                    final_filtered.append(sig)
-                    last_time = current_time
+    
+    # যদি ফিল্টারের পর খুব কম সিগন্যাল থাকে, কিছু সিগন্যাল রিটেইন করা
+    if len(final_filtered) < 2 and total_count > 2:
+        return unique_signals[:3]
         
-        return final_filtered if final_filtered else trimmed_signals
+    return final_filtered
 
 def generate_future_signals(valid_markets, start_time, end_time, mode, filter_days):
     generated_list = []
@@ -217,6 +211,7 @@ def show_main_dashboard(chat_id):
     markup.add(
         types.InlineKeyboardButton('📰 TODAY NEWS', callback_data='btn_today_news'),
         types.InlineKeyboardButton('📊 BACKTEST SIGNAL', callback_data='btn_backtest_mode'),
+        types.InlineKeyboardButton('🧠 AI FILTER SIGNAL', callback_data='btn_ai_filter_mode'),
         types.InlineKeyboardButton('🤖 FUTURE GENERATOR', callback_data='btn_future_mode')
     )
     
