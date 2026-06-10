@@ -203,7 +203,7 @@ def show_main_dashboard(chat_id):
     
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(
-        types.InlineKeyboardButton('📊 AI BACKTEST ENGINE', callback_data='btn_backtest_mode'),
+        types.InlineKeyboardButton('📊 BACKTEST SIGNAL', callback_data='btn_backtest_mode'),
         types.InlineKeyboardButton('🧠 AI FILTER SIGNAL', callback_data='btn_ai_filter_mode'),
         types.InlineKeyboardButton('🤖 FUTURE GENERATOR', callback_data='btn_future_mode')
     )
@@ -362,9 +362,9 @@ def global_callback_router(call):
             user_data[chat_id]['state'] = 'FUTURE_DIR_SELECT'
             markup = types.InlineKeyboardMarkup(row_width=1)
             markup.add(
-                types.InlineKeyboardButton('🟢 BUY Only', callback_data='f_d_1'),
-                types.InlineKeyboardButton('🔴 PUT Only', callback_data='f_d_2'),
-                types.InlineKeyboardButton('🔵 BOTH SIGNALS', callback_data='f_d_3'),
+                types.InlineKeyboardButton('🟢 CALL', callback_data='f_d_1'),
+                types.InlineKeyboardButton('🔴 PUT', callback_data='f_d_2'),
+                types.InlineKeyboardButton('🔵 BOTH', callback_data='f_d_3'),
                 types.InlineKeyboardButton('🏠 HOME', callback_data='go_home')
             )
             bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text="<tg-emoji emoji-id=\"6212777095400006386\">💱</tg-emoji> <b>SELECT DIRECTION :</b>", reply_markup=markup, parse_mode='HTML')
@@ -404,11 +404,11 @@ def global_text_handler(message):
             markup = types.InlineKeyboardMarkup(row_width=3)
             markup.add(*[types.InlineKeyboardButton(f"🗓 Day {i}", callback_data=f'b_day_{i}') for i in range(1, 8)])
             markup.add(types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
-            bot.send_message(chat_id, '<b><tg-emoji emoji-id=\"6066652700148243688\">😀</tg-emoji> Select Original Backtest Depth Strategy (Day 1 to 7):</b>', reply_markup=markup, parse_mode='HTML')
+            bot.send_message(chat_id, '<b><tg-emoji emoji-id=\"6066652700148243688\">😀</tg-emoji> Select Backtest Strategy (Day 1 to 7):</b>', reply_markup=markup, parse_mode='HTML')
             return
         new_signals = parse_raw_signals(text)
         user_data[chat_id]['raw_signals'].extend(new_signals)
-        bot.send_message(chat_id, f'<tg-emoji emoji-id=\"6312039841219485770\">🏆</tg-emoji> <b>Added {len(new_signals)} lines to Backtest Pool. Send /done to run.</b>', parse_mode='HTML')
+        bot.send_message(chat_id, f'<tg-emoji emoji-id=\"6312039841219485770\">🏆</tg-emoji> <b>Added {len(new_signals)} Backtest Signal Send /done.</b>', parse_mode='HTML')
         return
 
     if state == 'COLLECTING_AI_FILTER':
@@ -424,7 +424,7 @@ def global_text_handler(message):
             return
         new_signals = parse_raw_signals(text)
         user_data[chat_id]['raw_signals'].extend(new_signals)
-        bot.send_message(chat_id, f'<tg-emoji emoji-id="6302799249146911743">📊</tg-emoji> <b>Added {len(new_signals)} lines to AI Filter Pool. Send /done to process.</b>', parse_mode='HTML')
+        bot.send_message(chat_id, f'<tg-emoji emoji-id="6302799249146911743">📊</tg-emoji> <b>Added {len(new_signals)} to AI Filter Send /done to process.</b>', parse_mode='HTML')
         return
 
     if state == 'FUTURE_START_TIME':
@@ -448,7 +448,7 @@ def global_text_handler(message):
         markup.add(*buttons)
         markup.add(types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
         
-        info_msg = '<tg-emoji emoji-id="6172731696505427144">💯</tg-emoji> <b>FUTURE ANALYSIS DEPTH FILTER</b>\n\n<i>Select computing range matrix below:</i>'
+        info_msg = '<tg-emoji emoji-id="6172731696505427144">💯</tg-emoji> <b>FUTURE DAYS FILTER</b>\n\n<i>Select Day Analyses tap below:</i>'
         bot.send_message(chat_id, info_msg, reply_markup=markup, parse_mode='HTML')
         return
 
@@ -500,7 +500,7 @@ def execute_future_generation(chat_id, message_id, filter_days):
     else:
         output_text += f'<b><tg-emoji emoji-id=\"6132052287423522342\">💎</tg-emoji>Total: {str(len(filtered)).zfill(2)} | <tg-emoji emoji-id=\"6311874557993033039\">🔼</tg-emoji> CALL: {str(call_count).zfill(2)} | <tg-emoji emoji-id=\"6312244088389247483\">🔽</tg-emoji>PUT: {str(put_count).zfill(2)}</b>\n\n'
         
-    output_text += '<b><tg-emoji emoji-id=\"6075388783887392362\">🚀</tg-emoji> Channel: @irttradingzone<tg-emoji emoji-id=\"6303015509340201177\">👑</tg-emoji>\n<tg-emoji emoji-id=\"6312351947902952139\">🚀</tg-emoji> Owner   : @irtsupport1\n<tg-emoji emoji-id=\"6300679098670784062\">⚙️</tg-emoji> Admin  : @imtiaz_x_admin\n<tg-emoji emoji-id=\"6300963760513228226\">🥳</tg-emoji> Core Powered By: IRT TRADING ZONE</b>'
+    output_text += '<b><tg-emoji emoji-id=\"6075388783887392362\">🚀</tg-emoji> Channel: @irttradingzone<tg-emoji emoji-id=\"6303015509340201177\">👑</tg-emoji>\n<tg-emoji emoji-id=\"6312351947902952139\">🚀</tg-emoji> Owner   : @irtsupport1\n<tg-emoji emoji-id=\"6300679098670784062\">⚙️</tg-emoji> Admin  : @imtiaz_x_admin\n<tg-emoji emoji-id=\"6300963760513228226\">🥳</tg-emoji> Powered By: IRT TRADING ZONE</b>'
     
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("🏠 MAIN DASHBOARD", callback_data="go_home"))
