@@ -4,7 +4,7 @@ import hashlib
 import threading
 import time
 import requests
-import uuid  # নতুন যুক্ত করা হয়েছে Key জেনারেট করার জন্য
+import uuid  # Key জেনারেট করার জন্য
 from datetime import datetime, timedelta
 from flask import Flask
 import telebot
@@ -25,7 +25,7 @@ def run_web_server():
 API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI' 
 ADMIN_ID = 8280240170                                           
 USER_FILE = 'users.txt'
-KEYS_FILE = 'keys.txt'  # নতুন: Keys স্টোর করার ফাইল
+KEYS_FILE = 'keys.txt'  # Keys স্টোর করার ফাইল
 
 # ➡️ আপনার গ্রুপ/চ্যানেল এবং অ্যাডমিন ইউজারনেম কনফিগারেশন
 CHANNEL_USERNAME = '@irttradingzone'
@@ -318,9 +318,16 @@ def fetch_and_send_news_signals(chat_id, message_id):
 def start_command(message):
     chat_id = message.chat.id
     
-    # ইউজার যদি আগে থেকেই অথোরাইজড থাকে, সরাসরি ড্যাশবোর্ডে যাবে
-    if is_user_authorized(chat_id):
+    # 👑 অ্যাডমিন বাইপাস: যদি ইউজার অ্যাডমিন হয়, তাহলে সরাসরি এক্সেস পাবে
+    if chat_id == ADMIN_ID:
+        save_user(chat_id)
+        bot.send_message(chat_id, '✅ <b>Admin Auto-Login Successful! Welcome Boss.</b>', parse_mode='HTML')
         show_main_dashboard(chat_id)
+        
+    # সাধারণ ইউজার যদি আগে থেকেই অথোরাইজড থাকে, সরাসরি ড্যাশবোর্ডে যাবে
+    elif is_user_authorized(chat_id):
+        show_main_dashboard(chat_id)
+        
     else:
         # নতুন ইউজার হলে Key চাইবে
         bot.send_message(chat_id, '<tg-emoji emoji-id="5429405838345265327">🔓</tg-emoji> <b>Please enter your Access Key to unlock the bot:</b>', parse_mode='HTML')
