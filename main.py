@@ -22,7 +22,7 @@ def run_web_server():
 # --- Configuration Setup ---
 API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI' 
 ADMIN_ID = 8280240170                                           
-PASSWORD = 'XNX'
+PASSWORD = 'backtest'
 USER_FILE = 'users.txt'
 
 bot = telebot.TeleBot(API_TOKEN)
@@ -75,7 +75,6 @@ def parse_raw_signals(text_block):
             parsed_list.append({'asset': asset, 'time': time_str, 'direction': direction})
     return parsed_list
 
-# ১. ওল্ড ব্যাকটেস্ট ইঞ্জিনের অরিজিনাল লজিক
 def original_backtest_engine(signals, days_filter):
     if not signals: return []
     signals.sort(key=lambda x: datetime.strptime(x['time'], '%H:%M'))
@@ -100,7 +99,6 @@ def original_backtest_engine(signals, days_filter):
                 last_time = current_time
     return final_filtered
 
-# ২. সম্পূর্ণ নতুন কাস্টম এআই ফিল্টার লজিক
 def custom_ai_filter_logic(signals, days):
     if not signals: return []
     signals.sort(key=lambda x: datetime.strptime(x['time'], '%H:%M'))
@@ -116,7 +114,6 @@ def custom_ai_filter_logic(signals, days):
     total_count = len(unique_signals)
     if total_count == 0: return []
 
-    # --- ১, ২, ৩ দিনের নতুন লজিক: আগে, মাঝে ও শেষে কাট ---
     if days in [1, 2, 3]:
         if total_count <= 3: return unique_signals
         start_cut = max(1, int(total_count * 0.15))
@@ -129,8 +126,6 @@ def custom_ai_filter_logic(signals, days):
             if abs(i - mid_index) <= max(1, int(total_count * 0.05)): continue
             filtered.append(sig)
         return filtered
-
-    # --- ৪, ৫, 六, ৭ দিনের নতুন লজিক: শুরুতে ট্রিম + নির্দিষ্ট মিনিট গ্যাপ ---
     else:
         gap_mapping = {4: 4, 5: 6, 6: 8, 7: 12}
         min_gap = gap_mapping.get(days, 5)
@@ -245,7 +240,6 @@ def global_callback_router(call):
         show_main_dashboard(chat_id)
         return
 
-    # বাটন ১: ব্যাকটেস্ট ইঞ্জিন অ্যাকশন
     if call.data == 'btn_backtest_mode':
         user_data[chat_id]['state'] = 'COLLECTING_BACKTEST'
         user_data[chat_id]['raw_signals'] = []  
@@ -259,7 +253,6 @@ def global_callback_router(call):
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=welcome_text, reply_markup=markup, parse_mode='HTML')
         return
 
-    # বাটন ২: নতুন এআই ফিল্টার অ্যাকশন
     if call.data == 'btn_ai_filter_mode':
         user_data[chat_id]['state'] = 'COLLECTING_AI_FILTER'
         user_data[chat_id]['raw_signals'] = []  
@@ -273,7 +266,6 @@ def global_callback_router(call):
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=welcome_text, reply_markup=markup, parse_mode='HTML')
         return
 
-    # বাটন ৩: ফিউচার জেনারেটর অ্যাকশন
     if call.data == 'btn_future_mode':
         user_data[chat_id]['state'] = 'FUTURE_MARKET_SELECT'
         markup = types.InlineKeyboardMarkup(row_width=1)
@@ -286,7 +278,6 @@ def global_callback_router(call):
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="6073116733302906931">⛈</tg-emoji> <b>SELECT TARGET MARKET TYPE FROM BELOW:</b>', reply_markup=markup, parse_mode='HTML')
         return
 
-    # ব্যাকটেস্ট দিন সিলেকশন প্রসেসিং
     if state == 'DAYS_SELECT_BACKTEST' and call.data.startswith('b_day_'):
         selected_day = call.data.split('_')[2]
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="5440410042773824003">🔗</tg-emoji> <b>Running Original Backtest Engine...</b>', parse_mode='HTML')
@@ -310,7 +301,6 @@ def global_callback_router(call):
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<b>Choose Backtest Days Depth Strategy:</b>', reply_markup=markup, parse_mode='HTML')
         return
 
-    # এআই ফিল্টার দিন সিলেকশন প্রসেসিং
     if state == 'DAYS_SELECT_AI_FILTER' and call.data.startswith('ai_day_'):
         selected_day = call.data.split('_')[2]
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="5440410042773824003">🔗</tg-emoji> <b>Running AI Filter Matrix Processing...</b>', parse_mode='HTML')
@@ -334,7 +324,6 @@ def global_callback_router(call):
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<b>Choose AI Cut Strategy Range Matrix:</b>', reply_markup=markup, parse_mode='HTML')
         return
 
-    # ফিউচার মডিউল সিলেকশন রাউটার সমূহ
     if state == 'FUTURE_MARKET_SELECT' and call.data.startswith('f_m_'):
         mode = call.data.replace('f_m_', '')
         user_data[chat_id]['market_mode'] = mode
@@ -405,7 +394,6 @@ def global_text_handler(message):
     state = user_data[chat_id].get('state')
     text = message.text.strip()
 
-    # ব্যাকটেস্ট রিসিভার
     if state == 'COLLECTING_BACKTEST':
         if text == '/done':
             if not user_data[chat_id].get('raw_signals'):
@@ -422,7 +410,6 @@ def global_text_handler(message):
         bot.send_message(chat_id, f'📥 <b>Added {len(new_signals)} lines to Backtest Pool. Send /done to run.</b>', parse_mode='HTML')
         return
 
-    # এআই ফিল্টার রিসিভার
     if state == 'COLLECTING_AI_FILTER':
         if text == '/done':
             if not user_data[chat_id].get('raw_signals'):
@@ -432,14 +419,13 @@ def global_text_handler(message):
             markup = types.InlineKeyboardMarkup(row_width=3)
             markup.add(*[types.InlineKeyboardButton(f"🗓 Day {i}", callback_data=f'ai_day_{i}') for i in range(1, 8)])
             markup.add(types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
-            bot.send_message(chat_id, '<b><tg-emoji emoji-id="6303015509340201177">👑</tg-emoji> Select AI Filter Strategy (Day 1 to 7):</b>\n\n<i><tg-emoji emoji-id="6132037293692691226">🎇</tg-emoji> Day 1-3: Auto Clean Cut Algorithm\n<i><tg-emoji emoji-id="6132037293692691226">🎇</tg-emoji> Day 4-7: Trim & Custom Time Gap Sync</i>', reply_markup=markup, parse_mode='HTML')
+            bot.send_message(chat_id, '<tg-emoji emoji-id="6303015509340201177">👑</tg-emoji> <b>Select AI Filter Strategy (Day 1 to 7):</b>\n\n<i><tg-emoji emoji-id="6132037293692691226">🎇</tg-emoji> Day 1-3: Auto Clean Cut Algorithm</i>\n<i><tg-emoji emoji-id="6132037293692691226">🎇</tg-emoji> Day 4-7: Trim & Custom Time Gap Sync</i>', reply_markup=markup, parse_mode='HTML')
             return
         new_signals = parse_raw_signals(text)
         user_data[chat_id]['raw_signals'].extend(new_signals)
         bot.send_message(chat_id, f'<tg-emoji emoji-id="6302799249146911743">📊</tg-emoji> <b>Added {len(new_signals)} lines to AI Filter Pool. Send /done to process.</b>', parse_mode='HTML')
         return
 
-    # ফিউচার টাইম হ্যান্ডলারস
     if state == 'FUTURE_START_TIME':
         user_data[chat_id]['start_time'] = text if re.match(r'^\d{2}:\d{2}$', text) else "00:00"
         user_data[chat_id]['state'] = 'FUTURE_END_TIME'
@@ -455,7 +441,7 @@ def global_text_handler(message):
         markup.add(*buttons)
         markup.add(types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
         
-        info_msg = '<tg-emoji emoji-id="6172731696505427144">💯</tg-emoji> <b>FUTURE ANALYSIS DEPTH FILTER</b>\n\n<i>Select computing range matrix below:</i>'
+        info_msg = '<tg-emoji emoji-id="172731696505427144">💯</tg-emoji> <b>FUTURE ANALYSIS DEPTH FILTER</b>\n\n<i>Select computing range matrix below:</i>'
         bot.send_message(chat_id, info_msg, reply_markup=markup, parse_mode='HTML')
         return
 
@@ -530,4 +516,4 @@ def broadcast_handler(message):
 
 if __name__ == '__main__':
     threading.Thread(target=run_web_server, daemon=True).start()
-    bot.infinity_polling()
+    bot.infinity_polling(skip_pending=True)
