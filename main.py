@@ -220,24 +220,24 @@ def show_main_dashboard(chat_id):
     )
     
     dashboard_text = (
-        '<tg-emoji emoji-id="6066435044090583397">💰</tg-emoji> <b>WELCOME TO ZEBRONIX ULTIMATE CONTROL</b>\n\n'
+        '<tg-emoji emoji-id="6066435044090583397">💰</tg-emoji> <b>WELCOME TO ZEBRONIX SOFTWARE</b>\n\n'
         '<tg-emoji emoji-id="6132052287423522342">💎</tg-emoji> <b>Select your operational module below to start:</b>'
     )
     bot.send_message(chat_id, dashboard_text, reply_markup=markup, parse_mode='HTML')
 
 # --- Live Forex News Core Engine (NEW) ---
 def fetch_and_send_news_signals(chat_id, message_id):
-    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='<pre>Fetching Live News Data ⌛...</pre>', parse_mode='HTML')
+    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='<pre>Fetching Live News Data <tg-emoji emoji-id=\"6312077782960579315\">🆕</tg-emoji>...</pre>', parse_mode='HTML')
     
     try:
         response = requests.get(NEWS_API_URL, timeout=15)
         if response.status_code != 200:
-            bot.send_message(chat_id, "⚠️ <b>API থেকে ডেটা রেসপন্স পাওয়া যায়নি! (Status Error)</b>", parse_mode='HTML')
+            bot.send_message(chat_id, "<tg-emoji emoji-id=\"6312054040381367354\">🕯</tg-emoji> <b>API no data please wait.. (Status Error)</b>", parse_mode='HTML')
             return
             
         data = response.json()
         if data.get("status") != "success" or not data.get("signals"):
-            bot.send_message(chat_id, "⚠️ <b>বর্তমানে কোনো লাইভ নিউজ সিগন্যাল উপলব্ধ নেই।</b>", parse_mode='HTML')
+            bot.send_message(chat_id, "<tg-emoji emoji-id=\"6312054040381367354\">🕯</tg-emoji> <b>বর্তমানে কোনো লাইভ নিউজ সিগন্যাল উপলব্ধ নেই।</b>", parse_mode='HTML')
             return
             
         for sig in data["signals"]:
@@ -252,7 +252,7 @@ def fetch_and_send_news_signals(chat_id, message_id):
             forecast = sig.get("forecast", "N/A")
             previous = sig.get("previous", "N/A")
             
-            reaction_emoji = "🟢" if "BUY" in direction else "🔴"
+            reaction_emoji = "<tg-emoji emoji-id=\"6311874557993033039\">🔼</tg-emoji>" if "BUY" in direction else "<tg-emoji emoji-id=\"6312244088389247483\">🔽</tg-emoji>"
             
             news_template = (
                 f'<tg-emoji emoji-id="6132037293692691226">🎇</tg-emoji> <b>Date</b> : {date}\n'
@@ -265,8 +265,8 @@ def fetch_and_send_news_signals(chat_id, message_id):
                 f"━━━━━━━ [ MTG 1 STEP ] ━━━━━━━\n"
                 f'<tg-emoji emoji-id="6311864288726228831">💯</tg-emoji> <b>Confirmation</b> : {confirmation} Verified\n'
                 f'<tg-emoji emoji-id="6300609412826406453">😍</tg-emoji> <b>Impact</b> : {impact}-Volatility\n'
-                f'<tg-emoji emoji-id="6300781159978639271">💌</tg-emoji> <b>Rules</b> : Contact Owner {OWNER_USERNAME} ✔\n'
-                f'<tg-emoji emoji-id="6303181741754424089">📊</tg-emoji> <b>Note</b> : \n'
+                f'<tg-emoji emoji-id="6300781159978639271">💌</tg-emoji> <b>Rules</b> : Contact Owner {OWNER_USERNAME} <tg-emoji emoji-id=\"6300666179409157866\">✅</tg-emoji>\n'
+                f'<tg-emoji emoji-id="6303181741754424089">📊</tg-emoji> <b>Note</b> : Don\'t use full balance news always risky\n'
                 f'<tg-emoji emoji-id="6300603412757093500">📊</tg-emoji>Forecast: {forecast} | Prev: {previous}<tg-emoji emoji-id="6300810288446840855">📉</tg-emoji>\n'
                 f'<tg-emoji emoji-id="6302799249146911743">📊</tg-emoji>1 Step Martingale Signals\n'
                 f'<tg-emoji emoji-id="6303243301520678287">❗️</tg-emoji> Manage Risk Properly <tg-emoji emoji-id="6303178164046666974">⚠️</tg-emoji>\n\n'
@@ -556,7 +556,7 @@ def execute_future_generation(chat_id, message_id, filter_days):
     filtered.sort(key=lambda s: datetime.strptime(s['time'], "%H:%M") if s.get('time') else datetime.min)
     
     output_text = "<b>╔═══════════════╗\n<tg-emoji emoji-id='6174544597906102118'>👑</tg-emoji>ZEBRONIX GENERATED SIGNAL<tg-emoji emoji-id='6323361327767099558'>⭐</tg-emoji>\n╚═══════════════╝</b>\n\n"
-    output_text += f'<b><tg-emoji emoji-id="6213083249258799034">♦️</tg-emoji> Mode: {market_mode}\n<tg-emoji emoji-id="6303076304602274890">🗓</tg-emoji> Days Analyser: {filter_days} Days\n<tg-emoji emoji-id="6174514743588426961\">🔒</tg-emoji> Time Window: {start_time} - {end_time}</b>\n<b>───────────────────</b>\n'
+    output_text += f'<b><tg-emoji emoji-id="6213083249258799034">♦️</tg-emoji> Mode: {market_mode}\n<tg-emoji emoji-id="6303076304602274890">🗓</tg-emoji> Days Analyser: {filter_days} Days\n<tg-emoji emoji-id="6174514743588426961">🔒</tg-emoji> Time Window: {start_time} - {end_time}</b>\n<b>───────────────────</b>\n'
     
     call_count, put_count = 0, 0
     if not filtered: output_text += "<code>No setups match current algorithm parameters.</code>\n"
