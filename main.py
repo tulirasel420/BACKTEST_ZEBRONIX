@@ -3,7 +3,7 @@ import re
 import hashlib
 import threading
 import time
-import requests
+import requests  # ফরেক্স নিউজ API থেকে ডেটা আনার জন্য
 from datetime import datetime, timedelta
 from flask import Flask
 import telebot
@@ -26,11 +26,13 @@ ADMIN_ID = 8280240170
 PASSWORD = 'ZEBRONIX1'
 USER_FILE = 'users.txt'
 
+# ➡️ আপনার গ্রুপ/চ্যানেল এবং অ্যাডমিন ইউজারনেম কনফিগারেশন
 CHANNEL_USERNAME = '@irttradingzone'
 OWNER_USERNAME = '@irtsupport1'
 ADMIN_USERNAME = '@imtiaz_x_admin'
-POWERED_BY = 'ZEBRONIX NEWS'
+POWERED_BY = 'ZEBRONIX SOFTWARE'
 
+# ➡️ ফরেক্স নিউজ জেনারেট করার workers.dev API URL
 NEWS_API_URL = 'https://forexkiller-newsproby.poghen-dx.workers.dev' 
 
 bot = telebot.TeleBot(API_TOKEN)
@@ -107,52 +109,6 @@ def original_backtest_engine(signals, days_filter):
                 last_time = current_time
     return final_filtered
 
-# --- UPDATED AI FILTER LOGIC ---
-def custom_ai_filter_logic(signals, days):
-    if not signals: return []
-    
-    # সময় অনুযায়ী সাজানো
-    signals.sort(key=lambda x: datetime.strptime(x['time'], '%H:%M'))
-    days = int(days)
-    
-    # ডুপ্লিকেট সময় ফিল্টার করা
-    unique_signals = []
-    seen_times = set()
-    for sig in signals:
-        if sig['time'] not in seen_times:
-            seen_times.add(sig['time'])
-            unique_signals.append(sig)
-            
-    total_count = len(unique_signals)
-    if total_count == 0: return []
-
-    # উন্নত ফিল্টারিং প্যারামিটার (দিন অনুযায়ী গ্যাপ সেট করা)
-    gap_matrix = {1: 3, 2: 4, 3: 5, 4: 6, 5: 8, 6: 10, 7: 12}
-    min_gap = gap_matrix.get(days, 5)
-    
-    final_filtered = []
-    last_time = None
-    
-    # অ্যালগরিদম: সিগন্যাল টাইম গ্যাপ এবং কনসিস্টেন্সি চেক
-    for sig in unique_signals:
-        current_time = datetime.strptime(sig['time'], '%H:%M')
-        
-        if last_time is None:
-            final_filtered.append(sig)
-            last_time = current_time
-        else:
-            time_diff = int((current_time - last_time).total_seconds() / 60)
-            # গ্যাপ চেক এবং সিগন্যাল স্থায়িত্ব নিশ্চিত করা
-            if time_diff >= min_gap:
-                final_filtered.append(sig)
-                last_time = current_time
-    
-    # যদি ফিল্টারের পর খুব কম সিগন্যাল থাকে, কিছু সিগন্যাল রিটেইন করা
-    if len(final_filtered) < 2 and total_count > 2:
-        return unique_signals[:3]
-        
-    return final_filtered
-
 def generate_future_signals(valid_markets, start_time, end_time, mode, filter_days):
     generated_list = []
     try:
@@ -211,7 +167,6 @@ def show_main_dashboard(chat_id):
     markup.add(
         types.InlineKeyboardButton('📰 TODAY NEWS', callback_data='btn_today_news'),
         types.InlineKeyboardButton('📊 BACKTEST SIGNAL', callback_data='btn_backtest_mode'),
-        types.InlineKeyboardButton('🧠 AI FILTER SIGNAL', callback_data='btn_ai_filter_mode'),
         types.InlineKeyboardButton('🤖 FUTURE GENERATOR', callback_data='btn_future_mode')
     )
     
@@ -329,19 +284,6 @@ def global_callback_router(call):
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=welcome_text, reply_markup=markup, parse_mode='HTML')
         return
 
-    if call.data == 'btn_ai_filter_mode':
-        user_data[chat_id]['state'] = 'COLLECTING_AI_FILTER'
-        user_data[chat_id]['raw_signals'] = []  
-        welcome_text = (
-            '<tg-emoji emoji-id="1134212600138833922">🧠</tg-emoji> <b>AI FILTER SIGNAL MODULE</b>\n\n'
-            '<tg-emoji emoji-id="6075388783887392362">🚀</tg-emoji> <b>Paste your signal lines below.</b>\n\n'
-            '<i>When completely finished, send</i> <b>/done</b> <i>to apply math cut filters.</i>'
-        )
-        markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("🏠 CANCEL & HOME", callback_data="go_home"))
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=welcome_text, reply_markup=markup, parse_mode='HTML')
-        return
-
     if call.data == 'btn_future_mode':
         user_data[chat_id]['state'] = 'FUTURE_MARKET_SELECT'
         markup = types.InlineKeyboardMarkup(row_width=1)
@@ -375,29 +317,6 @@ def global_callback_router(call):
         markup.add(*[types.InlineKeyboardButton(f"🗓 Day {i}", callback_data=f'b_day_{i}') for i in range(1, 8)])
         markup.add(types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<b>Choose Backtest Days Depth Strategy:</b>', reply_markup=markup, parse_mode='HTML')
-        return
-
-    if state == 'DAYS_SELECT_AI_FILTER' and call.data.startswith('ai_day_'):
-        selected_day = call.data.split('_')[2]
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="5440410042773824003">🔗</tg-emoji> <b>Running AI Filter Matrix Processing...</b>', parse_mode='HTML')
-        
-        raw_list = user_data[chat_id].get('raw_signals', [])
-        filtered_list = custom_ai_filter_logic(raw_list, selected_day)
-        
-        header_text = f'<b><tg-emoji emoji-id="6300963760513228226">🥳</tg-emoji> AI FILTER SIGNAL COMPLETED (Day {selected_day})</b>\n<b>━━━━━━━━━━━━━━━━━</b>\n'
-        body_text = "<code>" + "".join([f"M1;{s['asset'].replace('<','&lt;').replace('>','&gt;')};{s['time']};{s['direction']}\n" for s in filtered_list]) + "</code>" if filtered_list else "<code>No parameters matching clear klines.</code>\n"
-        
-        markup = types.InlineKeyboardMarkup(row_width=2)
-        markup.add(types.InlineKeyboardButton("⬅️ BACK", callback_data="back_to_ai_days"), types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
-        bot.send_message(chat_id, header_text + body_text, reply_markup=markup, parse_mode='HTML')
-        return
-
-    if call.data == "back_to_ai_days":
-        user_data[chat_id]['state'] = 'DAYS_SELECT_AI_FILTER'
-        markup = types.InlineKeyboardMarkup(row_width=3)
-        markup.add(*[types.InlineKeyboardButton(f"🗓 Day {i}", callback_data=f'ai_day_{i}') for i in range(1, 8)])
-        markup.add(types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<b>Choose AI Cut Strategy Range Matrix:</b>', reply_markup=markup, parse_mode='HTML')
         return
 
     if state == 'FUTURE_MARKET_SELECT' and call.data.startswith('f_m_'):
@@ -484,22 +403,6 @@ def global_text_handler(message):
         new_signals = parse_raw_signals(text)
         user_data[chat_id]['raw_signals'].extend(new_signals)
         bot.send_message(chat_id, f'<tg-emoji emoji-id="6312039841219485770">🏆</tg-emoji> <b>Added {len(new_signals)} Backtest Signal Send /done.</b>', parse_mode='HTML')
-        return
-
-    if state == 'COLLECTING_AI_FILTER':
-        if text == '/done':
-            if not user_data[chat_id].get('raw_signals'):
-                bot.send_message(chat_id, '⚠️ <b>No signals received yet.</b>', parse_mode='HTML')
-                return
-            user_data[chat_id]['state'] = 'DAYS_SELECT_AI_FILTER'
-            markup = types.InlineKeyboardMarkup(row_width=3)
-            markup.add(*[types.InlineKeyboardButton(f"🗓 Day {i}", callback_data=f'ai_day_{i}') for i in range(1, 8)])
-            markup.add(types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
-            bot.send_message(chat_id, '<tg-emoji emoji-id="6303015509340201177">👑</tg-emoji> <b>Select AI Filter Strategy (Day 1 to 7):</b>\n\n<i><tg-emoji emoji-id="6132037293692691226">🎇</tg-emoji> Day 1-3: Auto Clean Cut Algorithm</i>\n<i><tg-emoji emoji-id="6132037293692691226">🎇</tg-emoji> Day 4-7: Trim & Custom Time Gap Sync</i>', reply_markup=markup, parse_mode='HTML')
-            return
-        new_signals = parse_raw_signals(text)
-        user_data[chat_id]['raw_signals'].extend(new_signals)
-        bot.send_message(chat_id, f'<tg-emoji emoji-id="6302799249146911743">📊</tg-emoji> <b>Added {len(new_signals)} to AI Filter Send /done to process.</b>', parse_mode='HTML')
         return
 
     if state == 'FUTURE_START_TIME':
