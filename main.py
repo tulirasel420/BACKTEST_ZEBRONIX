@@ -23,14 +23,14 @@ def run_web_server():
 # --- Configuration Setup ---
 API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI' 
 ADMIN_ID = 8280240170                                           
-PASSWORD = 'ZEBRONIX1'
+PASSWORD = 'AI123'
 USER_FILE = 'users.txt'
 
 # ➡️ আপনার গ্রুপ/চ্যানেল এবং অ্যাডমিন ইউজারনেম কনফিগারেশন
 CHANNEL_USERNAME = '@irttradingzone'
 OWNER_USERNAME = '@irtsupport1'
 ADMIN_USERNAME = '@imtiaz_x_admin'
-POWERED_BY = 'ZEBRONIX NEWS'
+POWERED_BY = 'ZEBRONIX SOFTWARE'
 
 # ➡️ ফরেক্স নিউজ জেনারেট করার workers.dev API URL
 NEWS_API_URL = 'https://forexkiller-newsproby.poghen-dx.workers.dev' 
@@ -217,7 +217,6 @@ def show_main_dashboard(chat_id):
     markup.add(
         types.InlineKeyboardButton('📰 TODAY NEWS', callback_data='btn_today_news'),
         types.InlineKeyboardButton('📊 BACKTEST SIGNAL', callback_data='btn_backtest_mode'),
-        types.InlineKeyboardButton('🧠 AI FILTER SIGNAL', callback_data='btn_ai_filter_mode'),
         types.InlineKeyboardButton('🤖 FUTURE GENERATOR', callback_data='btn_future_mode')
     )
     
