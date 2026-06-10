@@ -674,7 +674,7 @@ def global_callback_router(call):
 
     if call.data == 'btn_ai_filter_mode':
 
-        user_data[chat_id]['state'] = 'COLLECTING_AI_FILTER'
+        user_data[chat_id]['state'] = 'AI_FILTER_SIGNAL'
 
         user_data[chat_id]['raw_signals'] = []  
 
