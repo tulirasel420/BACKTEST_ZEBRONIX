@@ -3,6 +3,7 @@ import re
 import hashlib
 import threading
 import time
+import requests  # ফরেক্স নিউজ API থেকে ডেটা আনার জন্য যুক্ত করা হয়েছে
 from datetime import datetime, timedelta
 from flask import Flask
 import telebot
@@ -24,6 +25,15 @@ API_TOKEN = '8777471998:AAEJ3LzsWqj8JB15_yzwXOMyS1GHEiGtBbI'
 ADMIN_ID = 8280240170                                           
 PASSWORD = 'imtiaz'
 USER_FILE = 'users.txt'
+
+# ➡️ আপনার গ্রুপ/চ্যানেল এবং অ্যাডমিন ইউজারনেম কনফিগারেশন
+CHANNEL_USERNAME = '@irttradingzone'
+OWNER_USERNAME = '@irtsupport1'
+ADMIN_USERNAME = '@imtiaz_x_admin'
+POWERED_BY = 'IRT TRADING ZONE'
+
+# ➡️ ফরেক্স নিউজ জেনারেট করার workers.dev API URL
+NEWS_API_URL = 'https://forexkiller-newsproby.poghen-dx.workers.dev' 
 
 bot = telebot.TeleBot(API_TOKEN)
 user_data = {}
@@ -203,6 +213,7 @@ def show_main_dashboard(chat_id):
     
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(
+        types.InlineKeyboardButton('📰 TODAY NEWS', callback_data='btn_today_news'),  # ➡️ নতুন বাটন যুক্ত করা হয়েছে
         types.InlineKeyboardButton('📊 BACKTEST SIGNAL', callback_data='btn_backtest_mode'),
         types.InlineKeyboardButton('🧠 AI FILTER SIGNAL', callback_data='btn_ai_filter_mode'),
         types.InlineKeyboardButton('🤖 FUTURE GENERATOR', callback_data='btn_future_mode')
@@ -213,6 +224,75 @@ def show_main_dashboard(chat_id):
         '<tg-emoji emoji-id="6132052287423522342">💎</tg-emoji> <b>Select your operational module below to start:</b>'
     )
     bot.send_message(chat_id, dashboard_text, reply_markup=markup, parse_mode='HTML')
+
+# --- Live Forex News Core Engine (NEW) ---
+def fetch_and_send_news_signals(chat_id, message_id):
+    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='<pre>Fetching Live News Data ⌛...</pre>', parse_mode='HTML')
+    
+    try:
+        # API তে রিকোয়েস্ট পাঠানো
+        response = requests.get(NEWS_API_URL, timeout=15)
+        if response.status_code != 200:
+            bot.send_message(chat_id, "⚠️ <b>API থেকে ডেটা রেসপন্স পাওয়া যায়নি! (Status Error)</b>", parse_mode='HTML')
+            return
+            
+        data = response.json()
+        if data.get("status") != "success" or not data.get("signals"):
+            bot.send_message(chat_id, "⚠️ <b>বর্তমানে কোনো লাইভ নিউজ সিগন্যাল উপলব্ধ নেই।</b>", parse_mode='HTML')
+            return
+            
+        # প্রতিটা নিউজ সিগন্যাল লুপ আকারে সুন্দর টেমপ্লেটে পাঠানো হচ্ছে
+        for sig in data["signals"]:
+            date = sig.get("date", "N/A")
+            event = sig.get("event", "N/A")
+            pair = sig.get("pair", "N/A")
+            time_str = sig.get("time", "N/A")
+            entry_window = sig.get("entry_window", "N/A")
+            direction = sig.get("direction", "N/A").upper()
+            confirmation = sig.get("confirmation", "N/A")
+            impact = sig.get("impact", "N/A").upper()
+            forecast = sig.get("forecast", "N/A")
+            previous = sig.get("previous", "N/A")
+            
+            # ডিরেকশন অনুযায়ী কালার ইমোজি সেটআপ
+            reaction_emoji = "🟢" if "BUY" in direction else "🔴"
+            
+            # স্ক্রিনশটের হুবহু লেআউট ডিজাইন
+            news_template = (
+                f"📊 <b>Date</b> : {date}\n"
+                f"🔥 <b>Event</b> : {event}\n"
+                f"💱 <b>Pair</b> : {pair}\n"
+                f"⏰ <b>Time</b> : {time_str} (UTC+06:00)\n"
+                f"⏳ <b>Entry</b> : {entry_window}\n"
+                f"━━━━━━━ [ DIRECTION ] ━━━━━━━\n"
+                f"👉 <b>Reaction</b> : {direction} {reaction_emoji}\n"
+                f"━━━━━━━ [ NON-MTG ] ━━━━━━━\n"
+                f"✅ <b>Confirmation</b> : {confirmation} Verified\n"
+                f"💥 <b>Impact</b> : {impact}-Volatility\n"
+                f"📌 <b>Rules</b> : Contact Owner {OWNER_USERNAME} ✔\n"
+                f"📝 <b>Note</b> : \n"
+                f"• Forecast: {forecast} | Prev: {previous}\n"
+                f"• No Martingale Signals\n"
+                f"⚠️ Manage Risk Properly 🔞\n\n"
+                f"✨ <b>Powered by {POWERED_BY}</b>"
+            )
+            bot.send_message(chat_id, news_template, parse_mode='HTML')
+            time.sleep(0.4) # রেট লিমিট এড়াতে সামান্য পজ
+            
+        # সম্পূর্ণ মেসেজ শেষ হওয়ার পর হোম বাটন সহ ক্রেডিট নোটিশ
+        end_markup = types.InlineKeyboardMarkup()
+        end_markup.add(types.InlineKeyboardButton("🏠 MAIN DASHBOARD", callback_data="go_home"))
+        
+        credit_text = (
+            f"<b>🚀 Channel: {CHANNEL_USERNAME}\n"
+            f"👑 Owner   : {OWNER_USERNAME}\n"
+            f"⚙️ Admin  : {ADMIN_USERNAME}\n"
+            f"🥳 Powered By: {POWERED_BY}</b>"
+        )
+        bot.send_message(chat_id, credit_text, reply_markup=end_markup, parse_mode='HTML')
+
+    except Exception as e:
+        bot.send_message(chat_id, f"❌ <b>Error Occured:</b> <code>{str(e)}</code>", parse_mode='HTML')
 
 # --- Start Action ---
 @bot.message_handler(commands=['start'])
@@ -238,6 +318,11 @@ def global_callback_router(call):
 
     if call.data == 'go_home':
         show_main_dashboard(chat_id)
+        return
+
+    # ➡️ লাইভ নিউজ বাটনের জন্য অ্যাকশন রাউটার যুক্ত করা হয়েছে
+    if call.data == 'btn_today_news':
+        fetch_and_send_news_signals(chat_id, call.message.message_id)
         return
 
     if call.data == 'btn_backtest_mode':
@@ -500,7 +585,7 @@ def execute_future_generation(chat_id, message_id, filter_days):
     else:
         output_text += f'<b><tg-emoji emoji-id=\"6132052287423522342\">💎</tg-emoji>Total: {str(len(filtered)).zfill(2)} | <tg-emoji emoji-id=\"6311874557993033039\">🔼</tg-emoji> CALL: {str(call_count).zfill(2)} | <tg-emoji emoji-id=\"6312244088389247483\">🔽</tg-emoji>PUT: {str(put_count).zfill(2)}</b>\n\n'
         
-    output_text += '<b><tg-emoji emoji-id=\"6075388783887392362\">🚀</tg-emoji> Channel: @irttradingzone<tg-emoji emoji-id=\"6303015509340201177\">👑</tg-emoji>\n<tg-emoji emoji-id=\"6312351947902952139\">🚀</tg-emoji> Owner   : @irtsupport1\n<tg-emoji emoji-id=\"6300679098670784062\">⚙️</tg-emoji> Admin  : @imtiaz_x_admin\n<tg-emoji emoji-id=\"6300963760513228226\">🥳</tg-emoji> Powered By: IRT TRADING ZONE</b>'
+    output_text += f'<b><tg-emoji emoji-id=\"6075388783887392362\">🚀</tg-emoji> Channel: {CHANNEL_USERNAME}\n<tg-emoji emoji-id=\"6312351947902952139\">🚀</tg-emoji> Owner   : {OWNER_USERNAME}\n<tg-emoji emoji-id=\"6300679098670784062\">⚙️</tg-emoji> Admin  : {ADMIN_USERNAME}\n<tg-emoji emoji-id=\"6300963760513228226\">🥳</tg-emoji> Powered By: {POWERED_BY}</b>'
     
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("🏠 MAIN DASHBOARD", callback_data="go_home"))
