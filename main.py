@@ -321,7 +321,7 @@ def start_command(message):
     # 👑 অ্যাডমিন বাইপাস: যদি ইউজার অ্যাডমিন হয়, তাহলে সরাসরি এক্সেস পাবে
     if chat_id == ADMIN_ID:
         save_user(chat_id)
-        bot.send_message(chat_id, '✅ <b>Admin Auto-Login Successful! Welcome Boss.</b>', parse_mode='HTML')
+        bot.send_message(chat_id, '<tg-emoji emoji-id=\"6145308643853083804\">🔑</tg-emoji> <b>RASU QxB Welcome Boss.</b>', parse_mode='HTML')
         show_main_dashboard(chat_id)
         
     # সাধারণ ইউজার যদি আগে থেকেই অথোরাইজড থাকে, সরাসরি ড্যাশবোর্ডে যাবে
@@ -343,7 +343,7 @@ def check_password(message):
         # Key সঠিক হলে সেটি ডিলিট করে ইউজারকে সেভ করবে
         remove_used_key(entered_key)
         save_user(chat_id)
-        bot.send_message(chat_id, '✅ <b>Access Granted! Your account is successfully linked.</b>', parse_mode='HTML')
+        bot.send_message(chat_id, '<tg-emoji emoji-id=\"6145667045989031906\">💰</tg-emoji> <b>Access Granted! Your account is successfully linked.</b>', parse_mode='HTML')
         show_main_dashboard(chat_id)
     else:
         bot.send_message(chat_id, '<tg-emoji emoji-id="6066584947039148700">⚠️</tg-emoji> <b>Invalid or Used Key! Please try again or contact Admin.</b>', parse_mode='HTML')
@@ -362,7 +362,7 @@ def admin_genkey(message):
                 for k in new_keys:
                     f.write(f"{k}\n")
                     
-            msg_text = f"✅ <b>Generated {num_keys} New Access Key(s):</b>\n\n"
+            msg_text = f"<tg-emoji emoji-id=\"6147726688965893754\">🔒</tg-emoji> <b>Generated {num_keys} New Access Key(s):</b>\n\n"
             msg_text += "\n".join([f"<code>{k}</code>" for k in new_keys])
             msg_text += "\n\n<i>Click on a key to copy it. Send to users.</i>"
             
