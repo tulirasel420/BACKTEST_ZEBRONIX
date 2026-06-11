@@ -530,7 +530,7 @@ def process_live_signal(chat_id, message_id, pair):
         resistance = round(base_price + (base_price * random.uniform(0.001, 0.003)), 3 if "JPY" in pair else 5)
 
         # --- Updated Fixed Complete Bold Layout Format ---
-           signal_template = f"""<b>╔═══════════════╗
+        signal_template = f"""<b>   ╔═══════════════╗
          <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>  ZEBRONIX LIVE AI  <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>
    ╚═══════════════╝
 ┏━━━━━━━━━━━━━━━━━━━━
