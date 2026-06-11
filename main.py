@@ -346,7 +346,7 @@ def global_callback_router(call):
         user_data[chat_id]['state'] = 'COLLECTING_BACKTEST'
         user_data[chat_id]['raw_signals'] = []  
         welcome_text = (
-            '<tg-emoji emoji-id="6276089822490662156">😉</tg-emoji><tg-emoji emoji-id="6278133818901666441">😌</tg-emoji><tg-emoji emoji-id="6276079828101765459">😇</tg-emoji><tg-emoji emoji-id="6275803150603522302">😊</tg-emoji><tg-emoji emoji-id="6275939064843603913">🚀</tg-emoji><tg-emoji emoji-id="6275853229922193308">🅰</tg-emoji><tg-emoji emoji-id="6278459282933419717">🅰</tg-emoji><tg-emoji emoji-id="6276014351325337415">🅰</tg-emoji><tg-emoji emoji-id="6278369556771639533">🅰</tg-emoji>\n\n'
+            '<tg-emoji emoji-id="6276089822490662156">😉</tg-emoji><tg-emoji emoji-id="6278133818901666441">😌</tg-emoji><tg-emoji emoji-id="6276079828101765459">😇</tg-emoji><tg-emoji emoji-id="6275803150603522302">😊</tg-emoji><tg-emoji emoji-id="6275939064843603913">🚀</tg-emoji><tg-emoji emoji-id="6275853229922193308">🅰</tg-emoji><tg-emoji emoji-id="6274459282933419717">🅰</tg-emoji><tg-emoji emoji-id="6276014351325337415">🅰</tg-emoji><tg-emoji emoji-id="6278369556771639533">🅰</tg-emoji>\n\n'
             '<tg-emoji emoji-id="6300758774609092069">🌍</tg-emoji> <b> BACKTEST MODULE</b>\n\n'
             '<tg-emoji emoji-id="6075388783887392362">🚀</tg-emoji> <b>Paste your signals below.</b>\n\n'
             '<i>When completely finished, send</i> <b>/done</b> <i>to compile original data.</i>'
@@ -505,7 +505,7 @@ def global_text_handler(message):
 # --- Live API Processor & Formatting ---
 def process_live_signal(chat_id, message_id, pair):
     bot.edit_message_text(chat_id=chat_id, message_id=message_id, 
-                          text=f'🔍 𝙰𝚗𝚊𝚕𝚢𝚣𝚒𝚗げる {pair}\n⏳ 𝚂𝚌𝚊𝚗𝚗𝚒𝚗𝚐 𝚖𝚊𝚛𝚔𝚎𝚝 𝚍𝚊𝚝𝚊 · ·', parse_mode='HTML')
+                          text=f'🔍 𝙰𝚗𝚊𝚕𝚢𝚣𝚒𝚗𝚐 {pair}\n⏳ 𝚂𝚌𝚊𝚗𝚗𝚒𝚗𝚐 𝚖𝚊𝚛𝚔𝚎𝚝 𝚍𝚊𝚝𝚊 · ·', parse_mode='HTML')
     
     formatted_pair = pair[:3] + '/' + pair[3:]
     api_url = f"{LIVE_API_BASE}/?pairs={formatted_pair}&Last_Candle_Data=100"
@@ -516,44 +516,44 @@ def process_live_signal(chat_id, message_id, pair):
         
         is_call = random.choice([True, False])
         trend = "𝙱𝚞𝚕𝚕𝚒𝚜𝚑" if is_call else "𝙱𝚎𝚊𝚛𝚒𝚜𝚑"
-        direction = "𝙱𝚄𝚈 ↑" if is_call else "𝙿𝚄𝚃 ↓"  # এখানে চাইল্ড কন্ডিশন অনুযায়ী পরিবর্তন করা হয়েছে
-        entry_time = (datetime.now() + timedelta(minutes=1)).strftime("%H:%M")
+        direction = "𝙱𝚄𝚈 ↑" if is_call else "𝙿𝚄𝚃 ↓"
+        
+        # --- Quotex Time 24-Hour Format Fix ---
+        # 1-minute buffer added to matching future current signal execution
+        quotex_time = datetime.now() + timedelta(minutes=1)
+        entry_time = quotex_time.strftime("%H:%M") 
+        
         strength = random.randint(81, 96)
         
         base_price = round(random.uniform(1.0500, 150.000), 3) if "JPY" in pair else round(random.uniform(0.60000, 1.30000), 5)
         support = round(base_price - (base_price * random.uniform(0.001, 0.003)), 5 if "JPY" not in pair else 3)
         resistance = round(base_price + (base_price * random.uniform(0.001, 0.003)), 5 if "JPY" not in pair else 3)
 
-        if is_call:
-            reason = f"Price formed a pin-bar reversal with a lower wick 2.2x the body size near {support}, a reliable bullish rejection signal. Volume dynamics and spread analysis suggest sellers are exhausted at this level. The structure is printing higher lows — a textbook bullish staircase pattern. Entry aligns precisely with the demand zone; target is resistance at {resistance}."
-        else:
-            reason = f"Price formed a shooting star reversal with an upper wick 2.4x the body size near {resistance}, a strong bearish rejection signal. Volume dynamics and spread analysis suggest buyers are exhausted at this peak. The structure is printing lower highs — a textbook bearish descent pattern. Entry aligns perfectly with the supply zone; target is support at {support}."
-
-        signal_template = f"""╔══════════════════════╗
-        👑  ZEBRONIX AI SIGNAL  👑
+        # --- Updated New Format Template with Complete Bold Wrap ---
+        signal_template = f"""<b>╔══════════════════════╗
+   👑  ZEBRONIX LIVE AI  👑
 ╚══════════════════════╝
-┏━━━━━━━━━━━━━━━━━━━━┓
+┏━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ 📊 𝙰𝚜𝚜𝚎𝚝      : {pair}
-┃ 📉 𝚃𝚛𝚎𝚗𝚍      : {trend}
-┃ 🔻 𝙳𝚒𝚛𝚎𝚌𝚝𝚒𝚘𝚗  : {direction}
+┃ 📈 𝚃𝚛𝚎𝚗𝚍      : {trend}
+┃ 🔺 𝙳𝚒𝚛𝚎𝚌𝚝𝚒𝚘𝚗  : {direction}
 ┃ ⏱ 𝚃𝚒𝚖𝚎𝚏𝚛𝚊𝚖𝚎  : 𝙼1
 ┃ ⏰ 𝙴𝚗𝚝𝚛𝚢      : {entry_time}
 ┃ ⚡ 𝚂𝚝𝚛𝚎𝚗𝚐𝚝𝚑   : 𝙷𝚒𝚐𝚑 {strength}% 🟢
 ┃ 🚨 𝙼𝚃𝙶 : 𝚂𝚃𝙴𝙿 1 𝙸𝙵 𝚁𝙴𝚀𝚄𝙸𝚁𝙴𝙳
-┃ 💎 𝙿𝚊้ย𝚘𝚞𝚝     : 85%
-┗━━━━━━━━━━━━━━━━━━━━┛
-┏━━━━━━━━━━━━━━━━━━━━┓
+┗━━━━━━━━━━━━━━━━━━━━━━
+
+┏━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ 🛡 𝚂𝚞𝚙𝚙𝚘𝚛𝚝    : {support}
 ┃ 🚧 𝚁𝚎𝚜𝚒𝚜𝚝𝚊𝚗𝚌𝚎 : {resistance}
-┗━━━━━━━━━━━━━━━━━━━━┛
-┏━━━━━━━━━━━━━━━━━━━━━┓
+┗━━━━━━━━━━━━━━━━━━━━━━┛
+┏━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ 👑 𝙾𝚠𝚗𝚎𝚛 : {OWNER_USERNAME}✨
-┗━━━━━━━━━━━━━━━━━━━━━┛
-{reason}"""
+┗━━━━━━━━━━━━━━━━━━━━━━┛</b>"""
 
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("🏠 MAIN DASHBOARD", callback_data="go_home"))
-        bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=f"<code>{signal_template}</code>", reply_markup=markup, parse_mode='HTML')
+        bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=signal_template, reply_markup=markup, parse_mode='HTML')
 
     except Exception as e:
         bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=f"❌ <b>Live Scan Error Occured:</b> <code>{str(e)}</code>", parse_mode='HTML')
