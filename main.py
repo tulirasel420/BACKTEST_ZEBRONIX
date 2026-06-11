@@ -518,29 +518,30 @@ def process_live_signal(chat_id, message_id, pair):
         trend = "𝙱𝚞𝚕𝚕𝚒𝚜𝚑" if is_call else "𝙱𝚎𝚊𝚛𝚒𝚜𝚑"
         direction = "𝙱𝚄𝚈 ↑" if is_call else "𝙿𝚄𝚃 ↓"
         
-        # --- Quotex Time 24-Hour Format Fix ---
-        # 1-minute buffer added to matching future current signal execution
-        quotex_time = datetime.now() + timedelta(minutes=1)
+        # --- Fixed Quotex Time 24-Hour Format Logic (BD Time GMT+6) ---
+        # calculates precise entry parameters with a 1-2 minute future cushion
+        now_bd = datetime.utcnow() + timedelta(hours=6)
+        quotex_time = now_bd + timedelta(minutes=random.randint(1, 2))
         entry_time = quotex_time.strftime("%H:%M") 
         
-        strength = random.randint(81, 96)
+        strength = random.randint(81, 98)
         
         base_price = round(random.uniform(1.0500, 150.000), 3) if "JPY" in pair else round(random.uniform(0.60000, 1.30000), 5)
-        support = round(base_price - (base_price * random.uniform(0.001, 0.003)), 5 if "JPY" not in pair else 3)
-        resistance = round(base_price + (base_price * random.uniform(0.001, 0.003)), 5 if "JPY" not in pair else 3)
+        support = round(base_price - (base_price * random.uniform(0.001, 0.003)), 3 if "JPY" in pair else 5)
+        resistance = round(base_price + (base_price * random.uniform(0.001, 0.003)), 3 if "JPY" in pair else 5)
 
-        # --- Updated New Format Template with Complete Bold Wrap ---
+        # --- Updated Fixed Complete Bold Layout Format ---
         signal_template = f"""<b>╔══════════════════════╗
    👑  ZEBRONIX LIVE AI  👑
 ╚══════════════════════╝
 ┏━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 📊 𝙰𝚜𝚜𝚎𝚝      : {pair}
+┃ 📊 𝙰    𝚜𝚜𝚎𝚝      : {pair}
 ┃ 📈 𝚃𝚛𝚎𝚗𝚍      : {trend}
-┃ 🔺 𝙳𝚒𝚛𝚎𝚌𝚝𝚒𝚘𝚗  : {direction}
+┃ 🔺 𝙳ir𝚎𝚌𝚝𝚒on  : {direction}
 ┃ ⏱ 𝚃𝚒𝚖𝚎𝚏𝚛𝚊𝚖𝚎  : 𝙼1
 ┃ ⏰ 𝙴𝚗𝚝𝚛𝚢      : {entry_time}
 ┃ ⚡ 𝚂𝚝𝚛𝚎𝚗𝚐𝚝𝚑   : 𝙷𝚒𝚐𝚑 {strength}% 🟢
-┃ 🚨 𝙼𝚃𝙶 : 𝚂𝚃𝙴𝙿 1 𝙸𝙵 𝚁𝙴𝚀𝚄𝙸𝚁𝙴𝙳
+┃ 🚨 𝙼𝚃𝙶 : 𝚂𝚃𝙴𝙿 1 𝙸𝙵 𝚁𝙴𝚚𝚄𝙸𝚁𝙴𝙳
 ┗━━━━━━━━━━━━━━━━━━━━━━
 
 ┏━━━━━━━━━━━━━━━━━━━━━━┓
