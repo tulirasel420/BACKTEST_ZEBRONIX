@@ -530,26 +530,26 @@ def process_live_signal(chat_id, message_id, pair):
         resistance = round(base_price + (base_price * random.uniform(0.001, 0.003)), 3 if "JPY" in pair else 5)
 
         # --- Updated Fixed Complete Bold Layout Format ---
-        signal_template = f"""<b>╔══════════════════╗
-   <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>  ZEBRONIX LIVE AI  <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>
-╚═══════════════════╝
-┏━━━━━━━━━━━━━━━━━━━━━━━┓
+        signal_template = f"""<b>╔═══════════════╗
+       <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>  ZEBRONIX LIVE AI  <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>
+╚═══════════════╝
+┏━━━━━━━━━━━━━━━━━━━━━┓
 ┃ <tg-emoji emoji-id="6300679098670784062">⚙️</tg-emoji> 𝙰𝚜𝚜𝚎𝚝      : {pair}
 ┃ <tg-emoji emoji-id="6312351947902952139">🚀</tg-emoji> 𝚃𝚛𝚎𝚗𝚍      : {trend}
 ┃ <tg-emoji emoji-id="6312054040381367354">🕯</tg-emoji> 𝙳ir𝚎𝚌𝚝𝚒on  : {direction}
 ┃ <tg-emoji emoji-id="6311921227107671342">⏰</tg-emoji> 𝚃𝚒𝚖𝚎𝚏𝚛𝚊𝚖𝚎  : 𝙼𝟷
 ┃ <tg-emoji emoji-id="6312196117899517195">🔔</tg-emoji> 𝙴𝚗𝚝𝚛𝚢      : {entry_time}
 ┃ <tg-emoji emoji-id="6300924843814558816">☄️</tg-emoji> 𝚂𝚝𝚛𝚎𝚗𝚐𝚝𝚑   : 𝙷𝚒𝚐𝚑 {strength}% <tg-emoji emoji-id="6303181741754424089">📊</tg-emoji>
-┃ <tg-emoji emoji-id="6303030189538417585">➕</tg-emoji> 𝙼𝚃𝙶 : 𝚂𝚃𝙴𝙿 𝟛 𝙸𝙵 𝚁𝙴𝚚𝚄𝙸𝚁𝙴𝙳
-┗━━━━━━━━━━━━━━━━━━━━━━
+┃ <tg-emoji emoji-id="6303030189538417585">➕</tg-emoji> 𝙼𝚃𝙶 : 𝙼𝚊𝚛𝚝𝚒𝚗𝚐𝚊𝚕𝚎 𝙾𝚗𝚎 𝚂𝚝𝚎𝚙 
+┗━━━━━━━━━━━━━━━━━━━━
 
-┏━━━━━━━━━━━━━━━━━━━━━━┓
+┏━━━━━━━━━━━━━━━━━━━━┓
 ┃ <tg-emoji emoji-id="6301088640982326387">😋</tg-emoji> 𝚂𝚞𝚙𝚙𝚘𝚛𝚝    : {support}
 ┃ <tg-emoji emoji-id="6145389934699094865">🔈</tg-emoji> 𝚁𝚎𝚜𝚒𝚜𝚝𝚊𝚗𝚌𝚎 : {resistance}
-┗━━━━━━━━━━━━━━━━━━━━━━┛
-┏━━━━━━━━━━━━━━━━━━━━━━┓
+┗━━━━━━━━━━━━━━━━━━━━┛
+┏━━━━━━━━━━━━━━━━━━━┓
 ┃<tg-emoji emoji-id="6131977683841589337">👑</tg-emoji> 𝙾𝚠𝚗𝚎𝚛 : {OWNER_USERNAME}<tg-emoji emoji-id="6312042143321957539">✅</tg-emoji>
-┗━━━━━━━━━━━━━━━━━━━━━━┛</b>"""
+┗━━━━━━━━━━━━━━━━━━━┛</b>"""
 
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("🏠 MAIN DASHBOARD", callback_data="go_home"))
