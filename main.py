@@ -532,7 +532,7 @@ def process_live_signal(chat_id, message_id, pair):
         # --- Updated Fixed Complete Bold Layout Format ---
         signal_template = f"""<b>     ╔═══════════════╗
             <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>  ZEBRONIX LIVE AI  <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>
-    ╚═══════════════╝
+     ╚═══════════════╝
 ┏━━━━━━━━━━━━━━━━━━━━
 ┃ <tg-emoji emoji-id="6300679098670784062">⚙️</tg-emoji> 𝙰𝚜𝚜𝚎𝚝      : {pair}
 ┃ <tg-emoji emoji-id="6312351947902952139">🚀</tg-emoji> 𝚃𝚛𝚎𝚗𝚍      : {trend}
