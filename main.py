@@ -110,11 +110,7 @@ def parse_raw_signals(text_block):
 
 def original_backtest_engine(signals, days_filter):
     if not signals: return []
-    # কালীন ফরম্যাট অনুযায়ী সর্ট করার সেফগার্ড
-    try:
-        signals.sort(key=lambda x: datetime.strptime(x['time'], '%H:%M'))
-    except:
-        pass
+    signals.sort(key=lambda x: datetime.strptime(x['time'], '%H:%M'))
     unique_time_signals = []
     seen_times = set()
     for sig in signals:
@@ -125,18 +121,15 @@ def original_backtest_engine(signals, days_filter):
     min_allowed_gap = int(days_filter) * 3
     last_time = None
     for sig in unique_time_signals:
-        try:
-            current_time = datetime.strptime(sig['time'], '%H:%M')
-            if last_time is None:
+        current_time = datetime.strptime(sig['time'], '%H:%M')
+        if last_time is None:
+            final_filtered.append(sig)
+            last_time = current_time
+        else:
+            time_difference = int((current_time - last_time).total_seconds() / 60)
+            if time_difference >= min_allowed_gap:
                 final_filtered.append(sig)
                 last_time = current_time
-            else:
-                time_difference = int((current_time - last_time).total_seconds() / 60)
-                if time_difference >= min_allowed_gap:
-                    final_filtered.append(sig)
-                    last_time = current_time
-        except:
-            continue
     return final_filtered
 
 def generate_future_signals(valid_markets, start_time, end_time, mode, filter_days):
@@ -326,12 +319,7 @@ def admin_genkey(message):
 @bot.callback_query_handler(func=lambda call: True)
 def global_callback_router(call):
     chat_id = call.message.chat.id
-    
-    # ইউজার অবজেক্ট না থাকলে ইনিশিয়ালাইজ করুন
-    if chat_id not in user_data:
-        user_data[chat_id] = {'raw_signals': [], 'selected_pairs': [], 'state': 'MAIN_MENU'}
-        
-    state = user_data[chat_id].get('state')
+    state = user_data.get(chat_id, {}).get('state')
 
     if call.data == 'go_home':
         show_main_dashboard(chat_id)
@@ -345,7 +333,7 @@ def global_callback_router(call):
     if call.data == 'btn_live_signal_mode':
         keyboard = make_live_signal_keyboard()
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, 
-                              text='<tg-emoji emoji-id=\"6302799249146911743\">📊</tg-emoji> <b>Selected pair for live signal:</b>', 
+                              text='<tg-emoji emoji-id="6073116733302906931">⛈</tg-emoji> <b>SELECT REAL MARKET PAIR FOR LIVE ANALYSIS:</b>', 
                               reply_markup=keyboard, parse_mode='HTML')
         return
 
@@ -380,8 +368,7 @@ def global_callback_router(call):
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="6073116733302906931">⛈</tg-emoji> <b>SELECT TARGET MARKET TYPE FROM BELOW:</b>', reply_markup=markup, parse_mode='HTML')
         return
 
-    # --- ফিক্সড: স্টেট নির্বিশেষে b_day_ ক্লিক হ্যান্ডেল করা ---
-    if call.data.startswith('b_day_'):
+    if state == 'DAYS_SELECT_BACKTEST' and call.data.startswith('b_day_'):
         selected_day = call.data.split('_')[2]
         bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='<tg-emoji emoji-id="5440410042773824003">🔗</tg-emoji> <b>Running Original Backtest Engine...</b>', parse_mode='HTML')
         
@@ -393,7 +380,7 @@ def global_callback_router(call):
         
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(types.InlineKeyboardButton("⬅️ BACK", callback_data="back_to_b_days"), types.InlineKeyboardButton("🏠 HOME", callback_data="go_home"))
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text=header_text + body_text, reply_markup=markup, parse_mode='HTML')
+        bot.send_message(chat_id, header_text + body_text, reply_markup=markup, parse_mode='HTML')
         return
 
     if call.data == "back_to_b_days":
@@ -470,7 +457,7 @@ def global_callback_router(call):
 def global_text_handler(message):
     chat_id = message.chat.id
     if chat_id not in user_data:
-        user_data[chat_id] = {'raw_signals': [], 'selected_pairs': [], 'state': 'MAIN_MENU'}
+        user_data[chat_id] = {'raw_signals': [], 'selected_pairs': []}
     state = user_data[chat_id].get('state')
     text = message.text.strip()
 
@@ -518,7 +505,7 @@ def global_text_handler(message):
 # --- Live API Processor & Formatting ---
 def process_live_signal(chat_id, message_id, pair):
     bot.edit_message_text(chat_id=chat_id, message_id=message_id, 
-                          text=f'<tg-emoji emoji-id="6145389934699094865">🔈</tg-emoji> 𝙰𝚗𝚊𝚕𝚢𝚣𝚒𝚗げる {pair}\n<tg-emoji emoji-id="6147508869699477866">😕</tg-emoji> 𝚂𝚌𝚊𝚗𝚗𝚒𝚗𝚐 𝚖𝚊𝚛𝚔𝚎𝚝 𝚍𝚊𝚝𝚊 · ·', parse_mode='HTML')
+                          text=f'<tg-emoji emoji-id="6145389934699094865">🔈</tg-emoji> 𝙰𝚗𝚊𝚕𝚢𝚣𝚒𝚗𝚐 {pair}\n<tg-emoji emoji-id="6147508869699477866">😕</tg-emoji> 𝚂𝚌𝚊𝚗𝚗𝚒𝚗𝚐 𝚖𝚊𝚛𝚔𝚎𝚝 𝚍𝚊𝚝𝚊 · ·', parse_mode='HTML')
     
     formatted_pair = pair[:3] + '/' + pair[3:]
     api_url = f"{LIVE_API_BASE}/?pairs={formatted_pair}&Last_Candle_Data=100"
@@ -531,6 +518,7 @@ def process_live_signal(chat_id, message_id, pair):
         trend = "𝙱𝚞𝚕𝚕𝚒𝚜𝚑" if is_call else "𝙱𝚎𝚊𝚛𝚒𝚜𝚑"
         direction = "𝙱𝚄𝚈 ↑" if is_call else "𝙿𝚄𝚃 ↓"
         
+        # --- Fixed Quotex Time 24-Hour Format Logic (BD Time GMT+6) ---
         now_bd = datetime.utcnow() + timedelta(hours=6)
         quotex_time = now_bd + timedelta(minutes=random.randint(1, 2))
         entry_time = quotex_time.strftime("%H:%M") 
@@ -541,9 +529,10 @@ def process_live_signal(chat_id, message_id, pair):
         support = round(base_price - (base_price * random.uniform(0.001, 0.003)), 3 if "JPY" in pair else 5)
         resistance = round(base_price + (base_price * random.uniform(0.001, 0.003)), 3 if "JPY" in pair else 5)
 
-        signal_template = f"""<b>     ╔═══════════════╗
-            <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>  ZEBRONIX LIVE AI  <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>
-     ╚═══════════════╝
+        # --- Updated Fixed Complete Bold Layout Format ---
+        signal_template = f"""<b>   ╔═══════════════╗
+         <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>  ZEBRONIX LIVE AI  <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>
+   ╚═══════════════╝
 ┏━━━━━━━━━━━━━━━━━━━━
 ┃ <tg-emoji emoji-id="6300679098670784062">⚙️</tg-emoji> 𝙰𝚜𝚜𝚎𝚝      : {pair}
 ┃ <tg-emoji emoji-id="6312351947902952139">🚀</tg-emoji> 𝚃𝚛𝚎𝚗𝚍      : {trend}
@@ -554,12 +543,12 @@ def process_live_signal(chat_id, message_id, pair):
 ┃ <tg-emoji emoji-id="6303030189538417585">➕</tg-emoji> 𝙼𝚃𝙶 : 𝙼𝚊𝚛𝚝𝚒𝚗𝚐𝚊𝚕𝚎 𝙾𝚗𝚎 𝚂𝚝𝚎𝚙 
 ┗━━━━━━━━━━━━━━━━━━━━
 
-┏━━━━━━━━━━━━━━━━┓
+┏━━━━━━━━━━━━━━━━━━┓
 ┃ <tg-emoji emoji-id="6301088640982326387">😋</tg-emoji> 𝚂𝚞𝚙𝚙𝚘𝚛𝚝    : {support}
 ┃ <tg-emoji emoji-id="6145389934699094865">🔈</tg-emoji> 𝚁𝚎𝚜𝚒𝚜𝚝𝚊𝚗𝚌𝚎 : {resistance}
-┗━━━━━━━━━━━━━━━━┛
+┗━━━━━━━━━━━━━━━━━━┛
 ┏━━━━━━━━━━━━━━━━━┓
-┃     <tg-emoji emoji-id="6131977683841589337">👑</tg-emoji> 𝙾𝚠𝚗𝚎𝚛 : {OWNER_USERNAME}<tg-emoji emoji-id="6312042143321957539">✅</tg-emoji>
+┃<tg-emoji emoji-id="6131977683841589337">👑</tg-emoji> 𝙾𝚠𝚗𝚎𝚛 : {OWNER_USERNAME}<tg-emoji emoji-id="6312042143321957539">✅</tg-emoji>
 ┗━━━━━━━━━━━━━━━━━┛</b>"""
 
         markup = types.InlineKeyboardMarkup()
