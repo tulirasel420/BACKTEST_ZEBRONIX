@@ -505,7 +505,7 @@ def global_text_handler(message):
 # --- Live API Processor & Formatting ---
 def process_live_signal(chat_id, message_id, pair):
     bot.edit_message_text(chat_id=chat_id, message_id=message_id, 
-                          text=f'🔍 𝙰𝚗𝚊𝚕𝚢𝚣𝚒𝚗𝚐 {pair}\n⏳ 𝚂𝚌𝚊𝚗𝚗𝚒𝚗𝚐 𝚖𝚊𝚛𝚔𝚎𝚝 𝚍𝚊𝚝𝚊 · ·', parse_mode='HTML')
+                          text=f'<tg-emoji emoji-id="6145389934699094865">🔈</tg-emoji> 𝙰𝚗𝚊𝚕𝚢𝚣𝚒𝚗𝚐 {pair}\n<tg-emoji emoji-id="6147508869699477866">😕</tg-emoji> 𝚂𝚌𝚊𝚗𝚗𝚒𝚗𝚐 𝚖𝚊𝚛𝚔𝚎𝚝 𝚍𝚊𝚝𝚊 · ·', parse_mode='HTML')
     
     formatted_pair = pair[:3] + '/' + pair[3:]
     api_url = f"{LIVE_API_BASE}/?pairs={formatted_pair}&Last_Candle_Data=100"
@@ -519,37 +519,36 @@ def process_live_signal(chat_id, message_id, pair):
         direction = "𝙱𝚄𝚈 ↑" if is_call else "𝙿𝚄𝚃 ↓"
         
         # --- Fixed Quotex Time 24-Hour Format Logic (BD Time GMT+6) ---
-        # calculates precise entry parameters with a 1-2 minute future cushion
         now_bd = datetime.utcnow() + timedelta(hours=6)
         quotex_time = now_bd + timedelta(minutes=random.randint(1, 2))
         entry_time = quotex_time.strftime("%H:%M") 
         
-        strength = random.randint(81, 98)
+        strength = random.randint(75, 98)
         
         base_price = round(random.uniform(1.0500, 150.000), 3) if "JPY" in pair else round(random.uniform(0.60000, 1.30000), 5)
         support = round(base_price - (base_price * random.uniform(0.001, 0.003)), 3 if "JPY" in pair else 5)
         resistance = round(base_price + (base_price * random.uniform(0.001, 0.003)), 3 if "JPY" in pair else 5)
 
         # --- Updated Fixed Complete Bold Layout Format ---
-        signal_template = f"""<b>╔══════════════════════╗
-   👑  ZEBRONIX LIVE AI  👑
-╚══════════════════════╝
+        signal_template = f"""<b>╔══════════════════╗
+   <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>  ZEBRONIX LIVE AI  <tg-emoji emoji-id="6300646267940774133">▶️</tg-emoji>
+╚═══════════════════╝
 ┏━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 📊 𝙰    𝚜𝚜𝚎𝚝      : {pair}
-┃ 📈 𝚃𝚛𝚎𝚗𝚍      : {trend}
-┃ 🔺 𝙳ir𝚎𝚌𝚝𝚒on  : {direction}
-┃ ⏱ 𝚃𝚒𝚖𝚎𝚏𝚛𝚊𝚖𝚎  : 𝙼1
-┃ ⏰ 𝙴𝚗𝚝𝚛𝚢      : {entry_time}
-┃ ⚡ 𝚂𝚝𝚛𝚎𝚗𝚐𝚝𝚑   : 𝙷𝚒𝚐𝚑 {strength}% 🟢
-┃ 🚨 𝙼𝚃𝙶 : 𝚂𝚃𝙴𝙿 1 𝙸𝙵 𝚁𝙴𝚚𝚄𝙸𝚁𝙴𝙳
+┃ <tg-emoji emoji-id="6300679098670784062">⚙️</tg-emoji> 𝙰𝚜𝚜𝚎𝚝      : {pair}
+┃ <tg-emoji emoji-id="6312351947902952139">🚀</tg-emoji> 𝚃𝚛𝚎𝚗𝚍      : {trend}
+┃ <tg-emoji emoji-id="6312054040381367354">🕯</tg-emoji> 𝙳ir𝚎𝚌𝚝𝚒on  : {direction}
+┃ <tg-emoji emoji-id="6311921227107671342">⏰</tg-emoji> 𝚃𝚒𝚖𝚎𝚏𝚛𝚊𝚖𝚎  : 𝙼𝟷
+┃ <tg-emoji emoji-id="6312196117899517195">🔔</tg-emoji> 𝙴𝚗𝚝𝚛𝚢      : {entry_time}
+┃ <tg-emoji emoji-id="6300924843814558816">☄️</tg-emoji> 𝚂𝚝𝚛𝚎𝚗𝚐𝚝𝚑   : 𝙷𝚒𝚐𝚑 {strength}% <tg-emoji emoji-id="6303181741754424089">📊</tg-emoji>
+┃ <tg-emoji emoji-id="6303030189538417585">➕</tg-emoji> 𝙼𝚃𝙶 : 𝚂𝚃𝙴𝙿 𝟛 𝙸𝙵 𝚁𝙴𝚚𝚄𝙸𝚁𝙴𝙳
 ┗━━━━━━━━━━━━━━━━━━━━━━
 
 ┏━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 🛡 𝚂𝚞𝚙𝚙𝚘𝚛𝚝    : {support}
-┃ 🚧 𝚁𝚎𝚜𝚒𝚜𝚝𝚊𝚗𝚌𝚎 : {resistance}
+┃ <tg-emoji emoji-id="6301088640982326387">😋</tg-emoji> 𝚂𝚞𝚙𝚙𝚘𝚛𝚝    : {support}
+┃ <tg-emoji emoji-id="6145389934699094865">🔈</tg-emoji> 𝚁𝚎𝚜𝚒𝚜𝚝𝚊𝚗𝚌𝚎 : {resistance}
 ┗━━━━━━━━━━━━━━━━━━━━━━┛
 ┏━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 👑 𝙾𝚠𝚗𝚎𝚛 : {OWNER_USERNAME}✨
+┃<tg-emoji emoji-id="6131977683841589337">👑</tg-emoji> 𝙾𝚠𝚗𝚎𝚛 : {OWNER_USERNAME}<tg-emoji emoji-id="6312042143321957539">✅</tg-emoji>
 ┗━━━━━━━━━━━━━━━━━━━━━━┛</b>"""
 
         markup = types.InlineKeyboardMarkup()
