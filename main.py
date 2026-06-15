@@ -5,9 +5,10 @@ from datetime import datetime
 from pyrogram import Client, filters
 
 # ==================== CONFIGURATION ====================
-API_ID = int(os.environ.get("25635250", "123456"))        
-API_HASH = os.environ.get("42a88741c882a13d0079758580141c98", "your_api_hash")  
-BOT_TOKEN = os.environ.get("8777471998:AAFklfWsjvVEwyHowuw6pHTYpRsoEPqQZVU", "your_bot_token") 
+# এখানে প্রথম প্যারামিটার ভ্যারিয়েবল নেম এবং দ্বিতীয় প্যারামিটারে আপনার রিয়েল ডাটা সেট করা হয়েছে
+API_ID = int(os.environ.get("API_ID", "25635250"))        
+API_HASH = os.environ.get("API_HASH", "42a88741c882a13d0079758580141c98")  
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8777471998:AAFklfWsjvVEwyHowuw6pHTYpRsoEPqQZVU") 
 
 app = Client("zebronix_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
