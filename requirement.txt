@@ -1,0 +1,5 @@
+pyrogram==2.0.106
+tgcrypto==1.2.5
+aiohttp==3.11.11
+asyncio==3.4.3
+certifi==2024.12.14
