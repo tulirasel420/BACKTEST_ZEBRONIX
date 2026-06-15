@@ -1,9 +1,23 @@
 import os
 import asyncio
 import aiohttp
+from threading import Thread
 from datetime import datetime
 from pyrogram import Client, filters
-from pyrogram.enums import ParseMode  # পাইগ্রামের সঠিক পার্স মোড ইম্পোর্ট করা হলো
+from pyrogram.enums import ParseMode
+from flask import Flask  # Render এর পোর্ট বাইন্ডিং ফিক্স করার জন্য
+
+# ==================== FAKE WEB SERVER FOR RENDER ====================
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def home():
+    return "Bot is Running Live!"
+
+def run_flask():
+    # Render অটোমেটিক PORT এনভায়রনমেন্ট ভ্যারিয়েবল পাঠায়, সেটি রিসিভ করবে
+    port = int(os.environ.get("PORT", 8080))
+    flask_app.run(host='0.0.0.0', port=port)
 
 # ==================== CONFIGURATION ====================
 API_ID = int(os.environ.get("API_ID", "25635250"))        
@@ -48,7 +62,6 @@ ICON = {
 user_states = {}
 
 def text_emoji(emoji_char):
-    """মেসেজের ভেতরের নরমাল টেক্সটে প্রিমিয়াম ইমোজি শো করার ফাংশন"""
     if emoji_char in EMAP:
         return f'<tg-emoji emoji-id="{EMAP[emoji_char]}">{emoji_char}</tg-emoji>'
     return emoji_char
@@ -73,86 +86,37 @@ REAL_PAIRS = [
 # ==================== PREMIUM JSON KEYBOARDS ====================
 
 def make_premium_main_menu():
-    """আপনার EMAP এবং ICON ম্যাপের আইডিগুলো দিয়ে তৈরি কাস্টম স্টাইল মেনু"""
     return {
         "inline_keyboard": [
             [
-                {
-                    "text": "LIVE SIGNAL", 
-                    "callback_data": "menu_live",
-                    "style": "primary", 
-                    "icon_custom_emoji_id": ICON["signal"]
-                },
-                {
-                    "text": "OTC FUTURE", 
-                    "callback_data": "menu_future",
-                    "style": "primary", 
-                    "icon_custom_emoji_id": str(EMAP["⏳"])
-                }
+                {"text": "LIVE SIGNAL", "callback_data": "menu_live", "style": "primary", "icon_custom_emoji_id": ICON["signal"]},
+                {"text": "OTC FUTURE", "callback_data": "menu_future", "style": "primary", "icon_custom_emoji_id": str(EMAP["⏳"])}
             ],
             [
-                {
-                    "text": "BLACK OUT", 
-                    "callback_data": "menu_blackout",
-                    "style": "danger", 
-                    "icon_custom_emoji_id": str(EMAP["⏹"])
-                },
-                {
-                    "text": "FOREX NEWS", 
-                    "callback_data": "menu_news",
-                    "style": "success", 
-                    "icon_custom_emoji_id": str(EMAP["📣"])
-                }
+                {"text": "BLACK OUT", "callback_data": "menu_blackout", "style": "danger", "icon_custom_emoji_id": str(EMAP["⏹"])},
+                {"text": "FOREX NEWS", "callback_data": "menu_news", "style": "success", "icon_custom_emoji_id": str(EMAP["📣"])}
             ]
         ]
     }
 
 def make_premium_pairs_menu(pairs):
-    """পেয়ার সিলেকশন কিবোর্ড উইথ ডায়মন্ড প্রিমিয়াম ইমোজি আইকন"""
     keyboard = []
     row = []
     for pair in pairs[:16]:
-        row.append({
-            "text": pair,
-            "callback_data": f"set_pair:{pair}",
-            "style": "primary",
-            "icon_custom_emoji_id": ICON["diamond"]
-        })
+        row.append({"text": pair, "callback_data": f"set_pair:{pair}", "style": "primary", "icon_custom_emoji_id": ICON["diamond"]})
         if len(row) == 2:
             keyboard.append(row)
             row = []
     if row:
         keyboard.append(row)
-        
-    # ব্যাক বাটন উইথ ডেঞ্জার স্টাইল
-    keyboard.append([{
-        "text": "MAIN MENU",
-        "callback_data": "main_menu",
-        "style": "danger",
-        "icon_custom_emoji_id": ICON["back"]
-    }])
+    keyboard.append([{"text": "MAIN MENU", "callback_data": "main_menu", "style": "danger", "icon_custom_emoji_id": ICON["back"]}])
     return {"inline_keyboard": keyboard}
 
 def make_generate_action_menu():
-    """রকেট ও ব্যাক আইকন দিয়ে ফাইনাল অ্যাকশন কিবোর্ড"""
     return {
         "inline_keyboard": [
-            [
-                {
-                    "text": "GENERATE SIGNALS",
-                    "callback_data": "process_signals",
-                    "style": "success",
-                    "icon_custom_emoji_id": ICON["rocket"]
-                }
-            ],
-            [
-                {
-                    "text": "BACK TO MENU",
-                    "callback_data": "main_menu",
-                    "style": "danger",
-                    "icon_custom_emoji_id": ICON["back"]
-                }
-            ]
+            [{"text": "GENERATE SIGNALS", "callback_data": "process_signals", "style": "success", "icon_custom_emoji_id": ICON["rocket"]}],
+            [{"text": "BACK TO MENU", "callback_data": "main_menu", "style": "danger", "icon_custom_emoji_id": ICON["back"]}]
         ]
     }
 
@@ -162,11 +126,10 @@ def make_generate_action_menu():
 async def start_cmd(client, message):
     user_id = message.from_user.id
     user_states[user_id] = {"authenticated": False}
-    
     await message.reply_text(
         f"{text_emoji('🛡')} <b>WELCOME TO ZEBRONIX SOFTWARE 2026</b>\n\n"
         f"বোটের প্রিমিয়াম প্যানেল আনলক করতে পাসওয়ার্ডটি এন্টার করুন:",
-        parse_mode=ParseMode.HTML  # ফিক্সড ফরমেট
+        parse_mode=ParseMode.HTML
     )
 
 @app.on_message(filters.text & ~filters.command(["start"]))
@@ -180,17 +143,15 @@ async def handle_text(client, message):
     if not user_states[user_id].get("authenticated", False):
         if text == PASSWORD:
             user_states[user_id]["authenticated"] = True
-            
-            # সরাসরি raw api এর মাধ্যমে কাস্টম জেসন কিবোর্ড রেসপন্স
             await client.send_message(
                 chat_id=message.chat.id,
                 text=f"<tg-emoji emoji-id='{ICON['robot']}'>🤖</tg-emoji> <b>ZEBRONIX PREMIUM SYSTEM ACTIVATED</b> {text_emoji('✨')}\n\n"
                      f"নিচের প্রিমিয়াম বাটন প্যানেল থেকে আপনার অপশন বেছে নিন:",
-                parse_mode=ParseMode.HTML,  # ফিক্সড ফরমেট
+                parse_mode=ParseMode.HTML,
                 reply_markup=make_premium_main_menu()
             )
         else:
-            await message.reply_text(f"{text_emoji('❌')} <b>ভুল পাসওয়ার্ড!</b> আবার চেষ্টা করুন।", parse_mode=ParseMode.HTML) # ফিক্সড ফরমেট
+            await message.reply_text(f"{text_emoji('❌')} <b>ভুল পাসওয়ার্ড!</b> আবার চেষ্টা করুন।", parse_mode=ParseMode.HTML)
         return
 
 # ==================== CALLBACK CODES ====================
@@ -208,69 +169,34 @@ async def callback_handler(client, callback_query):
 
     if data == "main_menu":
         await client.edit_message_text(
-            chat_id=chat_id,
-            message_id=message_id,
+            chat_id=chat_id, message_id=message_id,
             text=f"<tg-emoji emoji-id='{ICON['robot']}'>🤖</tg-emoji> <b>ZEBRONIX PREMIUM SYSTEM ACTIVATED</b> {text_emoji('✨')}\n\n"
                  f"অপশন সিলেক্ট করুন:",
-            parse_mode=ParseMode.HTML,
-            reply_markup=make_premium_main_menu()
+            parse_mode=ParseMode.HTML, reply_markup=make_premium_main_menu()
         )
-    
     elif data == "menu_live":
         user_states[user_id]["type"] = "live"
-        await client.edit_message_text(
-            chat_id=chat_id,
-            message_id=message_id,
-            text=f"{text_emoji('📊')} <b>অনুগ্রহ করে আপনার লাইভ মার্কেট পেয়ারটি সিলেক্ট করুন:</b>",
-            parse_mode=ParseMode.HTML,
-            reply_markup=make_premium_pairs_menu(REAL_PAIRS)
-        )
-        
+        await client.edit_message_text(chat_id=chat_id, message_id=message_id, text=f"{text_emoji('📊')} <b>অনুগ্রহ করে আপনার লাইভ মার্কেট পেয়ারটি সিলেক্ট করুন:</b>", parse_mode=ParseMode.HTML, reply_markup=make_premium_pairs_menu(REAL_PAIRS))
     elif data == "menu_future":
         user_states[user_id]["type"] = "future"
-        await client.edit_message_text(
-            chat_id=chat_id,
-            message_id=message_id,
-            text=f"{text_emoji('⏳')} <b>অনুগ্রহ করে আপনার ফিউচার ওটিসি মার্কেট পেয়ারটি সিলেক্ট করুন:</b>",
-            parse_mode=ParseMode.HTML,
-            reply_markup=make_premium_pairs_menu(OTC_PAIRS)
-        )
-
+        await client.edit_message_text(chat_id=chat_id, message_id=message_id, text=f"{text_emoji('⏳')} <b>অনুগ্রহ করে আপনার ফিউচার ওটিসি মার্কেট পেয়ারটি সিলেক্ট করুন:</b>", parse_mode=ParseMode.HTML, reply_markup=make_premium_pairs_menu(OTC_PAIRS))
     elif data == "menu_blackout":
         user_states[user_id]["type"] = "blackout"
-        await client.edit_message_text(
-            chat_id=chat_id,
-            message_id=message_id,
-            text=f"{text_emoji('⏹')} <b>অনুগ্রহ করে আপনার ব্ল্যাকআউট ওটিসি মার্কেট পেয়ারটি সিলেক্ট করুন:</b>",
-            parse_mode=ParseMode.HTML,
-            reply_markup=make_premium_pairs_menu(OTC_PAIRS)
-        )
-
+        await client.edit_message_text(chat_id=chat_id, message_id=message_id, text=f"{text_emoji('⏹')} <b>অনুগ্রহ করে আপনার ব্ল্যাকআউট ওটিসি মার্কেট পেয়ারটি সিলেক্ট করুন:</b>", parse_mode=ParseMode.HTML, reply_markup=make_premium_pairs_menu(OTC_PAIRS))
     elif data == "menu_news":
         user_states[user_id]["type"] = "news"
-        await client.edit_message_text(
-            chat_id=chat_id,
-            message_id=message_id,
-            text=f"{text_emoji('📣')} <b>অনুগ্রহ করে আপনার ফরেক্স নিউজ মার্কেট পেয়ারটি সিলেক্ট করুন:</b>",
-            parse_mode=ParseMode.HTML,
-            reply_markup=make_premium_pairs_menu(REAL_PAIRS)
-        )
-
+        await client.edit_message_text(chat_id=chat_id, message_id=message_id, text=f"{text_emoji('📣')} <b>অনুগ্রহ করে আপনার ফরেক্স নিউজ মার্কেট পেয়ারটি সিলেক্ট করুন:</b>", parse_mode=ParseMode.HTML, reply_markup=make_premium_pairs_menu(REAL_PAIRS))
     elif data.startswith("set_pair:"):
         pair = data.split(":")[1]
         user_states[user_id]["pair"] = pair
-        
         await client.edit_message_text(
-            chat_id=chat_id,
-            message_id=message_id,
+            chat_id=chat_id, message_id=message_id,
             text=f"<tg-emoji emoji-id='{ICON['chart']}'>📊</tg-emoji> <b>Selected Market Pair:</b> <code>{pair}</code>\n"
                  f"{text_emoji('⏰')} <b>Start Time:</b> 00:00\n"
                  f"{text_emoji('⏳')} <b>End Time:</b> 23:59\n\n"
                  f"সব সেটিংস ঠিক থাকলে নিচের জেনারেট বাটনে ক্লিক করুন।",
-            parse_mode=ParseMode.HTML,
-            reply_markup=make_generate_action_menu()
+            parse_mode=ParseMode.HTML, reply_markup=make_generate_action_menu()
         )
-
     elif data == "process_signals":
         await callback_query.answer("Fetching Ultimate Signals...")
         state = user_states.get(user_id, {})
@@ -279,34 +205,18 @@ async def callback_handler(client, callback_query):
         
         async with aiohttp.ClientSession() as session:
             try:
-                # ১. লাইভ সিগন্যাল (১০০ ক্যান্ডেল ডেটা অ্যানালাইসিস ফর্ম্যাট)
                 if b_type == "live":
                     url = f"https://free-candeldata-forex.poghen-dx.workers.dev/?pairs={pair.replace('USD', '/USD') if 'USD' in pair else pair}&Last_Candle_Data=100"
                     async with session.get(url) as resp:
                         res = (
-                            f"╔═════════════╗\n"
-                            f"           👑  ZEBRONIX LIVE AI  👑\n"
-                            f"╚═════════════╝\n"
-                            f"┏━━━━━━━━━━━━━━━━━━━━\n"
-                            f"┃ 📊 𝙰𝚜𝚜𝚎𝚝        : {pair}\n"
-                            f"┃ 🕯 𝚃𝚛𝚎𝚗𝚍        : BULLISH\n"
-                            f"┃ 🎙 𝙳𝚒𝚛𝚎𝚌𝚝𝚒𝚘𝚗  : CALL\n"
-                            f"┃ ⏰ 𝚃𝚛𝚎𝚍𝚏𝚛𝚊𝚖𝚎  : 𝙼𝟷\n"
-                            f"┃ 😬 𝙴𝚗𝚝𝚛𝚢        : {datetime.now().strftime('%H:%M')}\n"
-                            f"┃ 🔈 𝚂𝚝𝚛𝚎𝚐𝚝𝚑    : 85% 🥳\n"
-                            f"┃ 🫣 𝙼𝚃𝙶  : 𝙼𝚊𝚛𝚝𝚒𝚗𝚐𝚊𝚕𝚎 𝚘𝚗𝚎 𝚜𝚝𝚎𝚙\n"
-                            f"┗━━━━━━━━━━━━━━━━━━━━\n\n"
-                            f"┏━━━━━━━━━━━━━━━━┓\n"
-                            f"┃ 📊 𝚂𝚞𝚙𝚙𝚘𝚛𝚝     : 1.08240\n"
-                            f"┃ 😋 𝚁𝚎𝚜𝚒𝚜𝚝𝚊𝚗𝚌𝚎 : 1.08950\n"
-                            f"┗━━━━━━━━━━━━━━━━┛\n"
-                            f"┏━━━━━━━━━━━━━━━┓\n"
-                            f"┃🔈 𝙾𝚆𝙽𝙴𝚁 : @irtsupport1✅\n"
-                            f"┗━━━━━━━━━━━━━━━┛"
+                            f"╔═════════════╗\n           👑  ZEBRONIX LIVE AI  👑\n╚═════════════╝\n"
+                            f"┏━━━━━━━━━━━━━━━━━━━━\n┃ 📊 𝙰𝚜𝚜𝚎𝚝        : {pair}\n┃ 🕯 𝚃𝚛𝚎𝚗𝚍        : BULLISH\n┃ 🎙 𝙳𝚒𝚛𝚎𝚌𝚝𝚒𝚘𝚗  : CALL\n"
+                            f"┃ ⏰ 𝚃𝚛𝚎𝚍𝚏𝚛𝚊𝚖𝚎  : 𝙼𝟷\n┃ 😬 𝙴𝚗𝚝𝚛𝚢        : {datetime.now().strftime('%H:%M')}\n┃ 🔈 𝚂𝚝𝚛𝚎𝚐𝚝𝚑    : 85% 🥳\n"
+                            f"┃ 🫣 𝙼𝚃𝙶  : 𝙼𝚊𝚛𝚝𝚒𝚗𝚐𝚊𝚕𝚎 𝚘𝚗𝚎 𝚜𝚝𝚎𝚙\n┗━━━━━━━━━━━━━━━━━━━━\n\n"
+                            f"┏━━━━━━━━━━━━━━━━┓\n┃ 📊 𝚂𝚞𝚙𝚙𝚘𝚛𝚝     : 1.08240\n┃ 😋 𝚁𝚎𝚜𝚒𝚜𝚝𝚊𝚗𝚌𝚎 : 1.08950\n┗━━━━━━━━━━━━━━━━┛\n"
+                            f"┏━━━━━━━━━━━━━━━┓\n┃🔈 𝙾𝚆𝙽𝙴𝚁 : @irtsupport1✅\n┗━━━━━━━━━━━━━━━┛"
                         )
                         await callback_query.message.reply_text(res)
-
-                # ২. ফিউচার ওটিসি সিগন্যাল ফর্ম্যাট
                 elif b_type == "future":
                     url = f"https://quotexotc-futureapi.poghen-dx.workers.dev/pairs={pair}?start_time=00:00&end_time=23:59"
                     async with session.get(url) as resp:
@@ -325,45 +235,29 @@ async def callback_handler(client, callback_query):
                             f"  📱  𝚉╎𝙴╎𝙱╎𝚁╎𝙾╎𝙽╎𝙸╎𝚇  📱"
                         )
                         await callback_query.message.reply_text(res)
-
-                # ৩. ব্ল্যাকআউট সিগন্যাল ফর্ম্যাট
                 elif b_type == "blackout":
                     url = f"https://blackoutsignal-qxapi.poghen-dx.workers.dev/pairs={pair}?start_time=00:03&end_time=23:59"
                     async with session.get(url) as resp:
-                        res = (
-                            f"M1;{pair};12:45\n"
-                            f"M1;{pair};13:10\n"
-                            f"M1;{pair};14:22"
-                        )
+                        res = f"M1;{pair};12:45\nM1;{pair};13:10\nM1;{pair};14:22"
                         await callback_query.message.reply_text(res)
-
-                # ৪. ফরেক্স নিউজ সিগন্যাল ফর্ম্যাট
                 elif b_type == "news":
                     url = f"https://forexkiller-newsproby.poghen-dx.workers.dev/?pairs={pair.replace('USD', '/USD') if 'USD' in pair else pair}&N_days=3&Newsfilter=high"
                     async with session.get(url) as resp:
                         res = (
-                            f"🎇 Date : Jun 11, 2026\n"
-                            f"🎙 Event : Monetary Policy Statement\n"
-                            f"🕯 Pair : {pair}\n"
-                            f"⏰ Time : 18:15 (UTC+06:00)\n"
-                            f"🔔 Entry : 18:14:40 - 18:14:55\n"
-                            f"━━━━━━━ [ DIRECTION ] ━━━━━━━\n"
-                            f"😬 Reaction : PUT-DOWN-SELL 🔽\n"
-                            f"━━━━━━━ [ MTG 1 STEP ] ━━━━━━━\n"
-                            f"💯 Confirmation : 94% Verified\n"
-                            f"😍 Impact : HIGH-Volatility\n"
-                            f"💌 Rules : Contact Owner @irtsupport1 ✅\n"
-                            f"📊 Note : Don't use full balance news always risky\n"
-                            f"📊Forecast: N/A | Prev: N/A📉\n"
-                            f"📊1 Step Martingale Signals\n"
-                            f"❗️ Manage Risk Properly ⚠️\n\n"
-                            f"🚀Powered by ZEBRONIX SOFTWARE"
+                            f"🎇 Date : Jun 11, 2026\n🎙 Event : Monetary Policy Statement\n🕯 Pair : {pair}\n⏰ Time : 18:15 (UTC+06:00)\n"
+                            f"🔔 Entry : 18:14:40 - 18:14:55\n━━━━━━━ [ DIRECTION ] ━━━━━━━\n😬 Reaction : PUT-DOWN-SELL 🔽\n"
+                            f"━━━━━━━ [ MTG 1 STEP ] ━━━━━━━\n💯 Confirmation : 94% Verified\n"
+                            f"😍 Impact : HIGH-Volatility\n💌 Rules : Contact Owner @irtsupport1 ✅\n"
+                            f"📊 Note : Don't use full balance news always risky\n📊Forecast: N/A | Prev: N/A📉\n"
+                            f"📊1 Step Martingale Signals\n❗️ Manage Risk Properly ⚠️\n\n🚀Powered by ZEBRONIX SOFTWARE"
                         )
                         await callback_query.message.reply_text(res)
-
             except Exception as e:
                 await callback_query.message.reply_text(f"{text_emoji('❌')} <b>API Error:</b> {str(e)}", parse_mode=ParseMode.HTML)
 
 # ==================== RUN SERVICE ====================
 if __name__ == "__main__":
+    # ব্যাকগ্রাউন্ডে ফ্ল্যাস্ক ওয়েব সার্ভার চালু করা হচ্ছে
+    Thread(target=run_flask).start()
+    # টেলিগ্রাম বোট রান করা হচ্ছে
     app.run()
