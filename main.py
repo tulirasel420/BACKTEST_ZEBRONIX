@@ -4,7 +4,7 @@ import aiohttp
 from datetime import datetime
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
-from aiohttp import web  # ব্লকিং Flask এর বদলে অ্যাসিনক্রোনাস সার্ভার
+from aiohttp import web
 
 # ==================== CONFIGURATION ====================
 API_ID = int(os.environ.get("API_ID", "25635250"))        
@@ -242,11 +242,13 @@ async def callback_handler(client, callback_query):
             except Exception as e:
                 await callback_query.message.reply_text(f"{text_emoji('❌')} <b>API Error:</b> {str(e)}", parse_mode=ParseMode.HTML)
 
-# ==================== WEB SERVER SETUP (NON-BLOCKING) ====================
+# ==================== WEB SERVER SETUP ====================
 async def web_home(request):
     return web.Response(text="Bot is Running Live!")
 
-async def start_web_server():
+# ==================== MAIN ASYNC RUNNER ====================
+async def main():
+    # ১. ওয়েব সার্ভার কনফিগারেশন ও স্টার্ট
     server = web.Application()
     server.add_routes([web.get('/', web_home)])
     runner = web.AppRunner(server)
@@ -254,16 +256,15 @@ async def start_web_server():
     port = int(os.environ.get("PORT", 8080))
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
+    print("Web server started successfully.")
 
-# ==================== MAIN RUNNER ====================
-async def main():
-    # Render এর জন্য অ্যাসিনক্রোনাস পোর্ট বাইন্ডিং চালু করা হলো
-    await start_web_server()
-    # টেলিগ্রাম বোট স্টার্ট করা হলো একই ইভেন্ট লুপে
+    # ২. Pyrogram বোট অফিশিয়াল ওয়েতে স্টার্ট (অ্যাসিনক্রোনাস)
     await app.start()
-    print("Bot started successfully!")
-    # বোটকে সচল রাখার জন্য লুপ সচল রাখা হলো
+    print("Telegram Bot listener activated.")
+    
+    # ৩. একই ইভেন্ট লুপ দোনটাকে আজীবন চালু রাখবে
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # অফিশিয়াল পাইগ্রাম মেথড ব্যবহার করে কোড রান
+    app.run(main())
