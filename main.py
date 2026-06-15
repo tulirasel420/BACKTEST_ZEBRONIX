@@ -4,6 +4,7 @@ import aiohttp
 from datetime import datetime
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton # বাটন ফিক্স করার জন্য
 from aiohttp import web
 
 # ==================== CONFIGURATION ====================
@@ -70,42 +71,38 @@ REAL_PAIRS = [
     'EURAUD', 'GBPAUD', 'GBPCAD', 'AUDCAD'
 ]
 
-# ==================== PREMIUM JSON KEYBOARDS ====================
+# ==================== PREMIUM KEYBOARDS (FIXED) ====================
 
 def make_premium_main_menu():
-    return {
-        "inline_keyboard": [
-            [
-                {"text": "LIVE SIGNAL", "callback_data": "menu_live", "style": "primary", "icon_custom_emoji_id": ICON["signal"]},
-                {"text": "OTC FUTURE", "callback_data": "menu_future", "style": "primary", "icon_custom_emoji_id": str(EMAP["⏳"])}
-            ],
-            [
-                {"text": "BLACK OUT", "callback_data": "menu_blackout", "style": "danger", "icon_custom_emoji_id": str(EMAP["⏹"])},
-                {"text": "FOREX NEWS", "callback_data": "menu_news", "style": "success", "icon_custom_emoji_id": str(EMAP["📣"])}
-            ]
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("LIVE SIGNAL", callback_data="menu_live"),
+            InlineKeyboardButton("OTC FUTURE", callback_data="menu_future")
+        ],
+        [
+            InlineKeyboardButton("BLACK OUT", callback_data="menu_blackout"),
+            InlineKeyboardButton("FOREX NEWS", callback_data="menu_news")
         ]
-    }
+    ])
 
 def make_premium_pairs_menu(pairs):
     keyboard = []
     row = []
     for pair in pairs[:16]:
-        row.append({"text": pair, "callback_data": f"set_pair:{pair}", "style": "primary", "icon_custom_emoji_id": ICON["diamond"]})
+        row.append(InlineKeyboardButton(pair, callback_data=f"set_pair:{pair}"))
         if len(row) == 2:
             keyboard.append(row)
             row = []
     if row:
         keyboard.append(row)
-    keyboard.append([{"text": "MAIN MENU", "callback_data": "main_menu", "style": "danger", "icon_custom_emoji_id": ICON["back"]}])
-    return {"inline_keyboard": keyboard}
+    keyboard.append([InlineKeyboardButton("MAIN MENU", callback_data="main_menu")])
+    return InlineKeyboardMarkup(keyboard)
 
 def make_generate_action_menu():
-    return {
-        "inline_keyboard": [
-            [{"text": "GENERATE SIGNALS", "callback_data": "process_signals", "style": "success", "icon_custom_emoji_id": ICON["rocket"]}],
-            [{"text": "BACK TO MENU", "callback_data": "main_menu", "style": "danger", "icon_custom_emoji_id": ICON["back"]}]
-        ]
-    }
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("GENERATE SIGNALS", callback_data="process_signals")],
+        [InlineKeyboardButton("BACK TO MENU", callback_data="main_menu")]
+    ])
 
 # ==================== BOT HANDLERS ====================
 
@@ -248,7 +245,6 @@ async def web_home(request):
 
 # ==================== MAIN ASYNC RUNNER ====================
 async def main():
-    # ১. ওয়েব সার্ভার কনফিগারেশন ও স্টার্ট
     server = web.Application()
     server.add_routes([web.get('/', web_home)])
     runner = web.AppRunner(server)
@@ -258,13 +254,10 @@ async def main():
     await site.start()
     print("Web server started successfully.")
 
-    # ২. Pyrogram বোট অফিশিয়াল ওয়েতে স্টার্ট (অ্যাসিনক্রোনাস)
     await app.start()
     print("Telegram Bot listener activated.")
     
-    # ৩. একই ইভেন্ট লুপ দোনটাকে আজীবন চালু রাখবে
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
-    # অফিশিয়াল পাইগ্রাম মেথড ব্যবহার করে কোড রান
     app.run(main())
