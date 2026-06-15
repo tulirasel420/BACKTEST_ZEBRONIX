@@ -1,23 +1,10 @@
 import os
 import asyncio
 import aiohttp
-from threading import Thread
 from datetime import datetime
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
-from flask import Flask  # Render এর পোর্ট বাইন্ডিং ফিক্স করার জন্য
-
-# ==================== FAKE WEB SERVER FOR RENDER ====================
-flask_app = Flask(__name__)
-
-@flask_app.route('/')
-def home():
-    return "Bot is Running Live!"
-
-def run_flask():
-    # Render অটোমেটিক PORT এনভায়রনমেন্ট ভ্যারিয়েবল পাঠায়, সেটি রিসিভ করবে
-    port = int(os.environ.get("PORT", 8080))
-    flask_app.run(host='0.0.0.0', port=port)
+from aiohttp import web  # ব্লকিং Flask এর বদলে অ্যাসিনক্রোনাস সার্ভার
 
 # ==================== CONFIGURATION ====================
 API_ID = int(os.environ.get("API_ID", "25635250"))        
@@ -213,7 +200,7 @@ async def callback_handler(client, callback_query):
                             f"┏━━━━━━━━━━━━━━━━━━━━\n┃ 📊 𝙰𝚜𝚜𝚎𝚝        : {pair}\n┃ 🕯 𝚃𝚛𝚎𝚗𝚍        : BULLISH\n┃ 🎙 𝙳𝚒𝚛𝚎𝚌𝚝𝚒𝚘𝚗  : CALL\n"
                             f"┃ ⏰ 𝚃𝚛𝚎𝚍𝚏𝚛𝚊𝚖𝚎  : 𝙼𝟷\n┃ 😬 𝙴𝚗𝚝𝚛𝚢        : {datetime.now().strftime('%H:%M')}\n┃ 🔈 𝚂𝚝𝚛𝚎𝚐𝚝𝚑    : 85% 🥳\n"
                             f"┃ 🫣 𝙼𝚃𝙶  : 𝙼𝚊𝚛𝚝𝚒𝚗𝚐𝚊𝚕𝚎 𝚘𝚗𝚎 𝚜𝚝𝚎𝚙\n┗━━━━━━━━━━━━━━━━━━━━\n\n"
-                            f"┏━━━━━━━━━━━━━━━━┓\n┃ 📊 𝚂𝚞𝚙𝚙𝚘𝚛𝚝     : 1.08240\n┃ 😋 𝚁𝚎𝚜𝚒𝚜𝚝𝚊𝚗𝚌𝚎 : 1.08950\n┗━━━━━━━━━━━━━━━━┛\n"
+                            f"┏━━━━━━━━━━━━━━━━┓\n┃ 📊 𝚂𝚞𝚙п𝚘𝚛𝚝     : 1.08240\n┃ 😋 𝚁𝚎𝚜𝚒𝚜𝚝𝚊𝚗𝚌𝚎 : 1.08950\n┗━━━━━━━━━━━━━━━━┛\n"
                             f"┏━━━━━━━━━━━━━━━┓\n┃🔈 𝙾𝚆𝙽𝙴𝚁 : @irtsupport1✅\n┗━━━━━━━━━━━━━━━┛"
                         )
                         await callback_query.message.reply_text(res)
@@ -255,9 +242,28 @@ async def callback_handler(client, callback_query):
             except Exception as e:
                 await callback_query.message.reply_text(f"{text_emoji('❌')} <b>API Error:</b> {str(e)}", parse_mode=ParseMode.HTML)
 
-# ==================== RUN SERVICE ====================
+# ==================== WEB SERVER SETUP (NON-BLOCKING) ====================
+async def web_home(request):
+    return web.Response(text="Bot is Running Live!")
+
+async def start_web_server():
+    server = web.Application()
+    server.add_routes([web.get('/', web_home)])
+    runner = web.AppRunner(server)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+
+# ==================== MAIN RUNNER ====================
+async def main():
+    # Render এর জন্য অ্যাসিনক্রোনাস পোর্ট বাইন্ডিং চালু করা হলো
+    await start_web_server()
+    # টেলিগ্রাম বোট স্টার্ট করা হলো একই ইভেন্ট লুপে
+    await app.start()
+    print("Bot started successfully!")
+    # বোটকে সচল রাখার জন্য লুপ সচল রাখা হলো
+    await asyncio.Event().wait()
+
 if __name__ == "__main__":
-    # ব্যাকগ্রাউন্ডে ফ্ল্যাস্ক ওয়েব সার্ভার চালু করা হচ্ছে
-    Thread(target=run_flask).start()
-    # টেলিগ্রাম বোট রান করা হচ্ছে
-    app.run()
+    asyncio.run(main())
