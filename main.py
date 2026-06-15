@@ -3,9 +3,9 @@ import asyncio
 import aiohttp
 from datetime import datetime
 from pyrogram import Client, filters
+from pyrogram.enums import ParseMode  # পাইগ্রামের সঠিক পার্স মোড ইম্পোর্ট করা হলো
 
 # ==================== CONFIGURATION ====================
-# এখানে প্রথম প্যারামিটার ভ্যারিয়েবল নেম এবং দ্বিতীয় প্যারামিটারে আপনার রিয়েল ডাটা সেট করা হয়েছে
 API_ID = int(os.environ.get("API_ID", "25635250"))        
 API_HASH = os.environ.get("API_HASH", "42a88741c882a13d0079758580141c98")  
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8777471998:AAFklfWsjvVEwyHowuw6pHTYpRsoEPqQZVU") 
@@ -166,7 +166,7 @@ async def start_cmd(client, message):
     await message.reply_text(
         f"{text_emoji('🛡')} <b>WELCOME TO ZEBRONIX SOFTWARE 2026</b>\n\n"
         f"বোটের প্রিমিয়াম প্যানেল আনলক করতে পাসওয়ার্ডটি এন্টার করুন:",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML  # ফিক্সড ফরমেট
     )
 
 @app.on_message(filters.text & ~filters.command(["start"]))
@@ -186,11 +186,11 @@ async def handle_text(client, message):
                 chat_id=message.chat.id,
                 text=f"<tg-emoji emoji-id='{ICON['robot']}'>🤖</tg-emoji> <b>ZEBRONIX PREMIUM SYSTEM ACTIVATED</b> {text_emoji('✨')}\n\n"
                      f"নিচের প্রিমিয়াম বাটন প্যানেল থেকে আপনার অপশন বেছে নিন:",
-                parse_mode="html",
+                parse_mode=ParseMode.HTML,  # ফিক্সড ফরমেট
                 reply_markup=make_premium_main_menu()
             )
         else:
-            await message.reply_text(f"{text_emoji('❌')} <b>ভুল পাসওয়ার্ড!</b> আবার চেষ্টা করুন।", parse_mode="html")
+            await message.reply_text(f"{text_emoji('❌')} <b>ভুল পাসওয়ার্ড!</b> আবার চেষ্টা করুন।", parse_mode=ParseMode.HTML) # ফিক্সড ফরমেট
         return
 
 # ==================== CALLBACK CODES ====================
@@ -212,7 +212,7 @@ async def callback_handler(client, callback_query):
             message_id=message_id,
             text=f"<tg-emoji emoji-id='{ICON['robot']}'>🤖</tg-emoji> <b>ZEBRONIX PREMIUM SYSTEM ACTIVATED</b> {text_emoji('✨')}\n\n"
                  f"অপশন সিলেক্ট করুন:",
-            parse_mode="html",
+            parse_mode=ParseMode.HTML,
             reply_markup=make_premium_main_menu()
         )
     
@@ -222,7 +222,7 @@ async def callback_handler(client, callback_query):
             chat_id=chat_id,
             message_id=message_id,
             text=f"{text_emoji('📊')} <b>অনুগ্রহ করে আপনার লাইভ মার্কেট পেয়ারটি সিলেক্ট করুন:</b>",
-            parse_mode="html",
+            parse_mode=ParseMode.HTML,
             reply_markup=make_premium_pairs_menu(REAL_PAIRS)
         )
         
@@ -232,7 +232,7 @@ async def callback_handler(client, callback_query):
             chat_id=chat_id,
             message_id=message_id,
             text=f"{text_emoji('⏳')} <b>অনুগ্রহ করে আপনার ফিউচার ওটিসি মার্কেট পেয়ারটি সিলেক্ট করুন:</b>",
-            parse_mode="html",
+            parse_mode=ParseMode.HTML,
             reply_markup=make_premium_pairs_menu(OTC_PAIRS)
         )
 
@@ -242,7 +242,7 @@ async def callback_handler(client, callback_query):
             chat_id=chat_id,
             message_id=message_id,
             text=f"{text_emoji('⏹')} <b>অনুগ্রহ করে আপনার ব্ল্যাকআউট ওটিসি মার্কেট পেয়ারটি সিলেক্ট করুন:</b>",
-            parse_mode="html",
+            parse_mode=ParseMode.HTML,
             reply_markup=make_premium_pairs_menu(OTC_PAIRS)
         )
 
@@ -252,7 +252,7 @@ async def callback_handler(client, callback_query):
             chat_id=chat_id,
             message_id=message_id,
             text=f"{text_emoji('📣')} <b>অনুগ্রহ করে আপনার ফরেক্স নিউজ মার্কেট পেয়ারটি সিলেক্ট করুন:</b>",
-            parse_mode="html",
+            parse_mode=ParseMode.HTML,
             reply_markup=make_premium_pairs_menu(REAL_PAIRS)
         )
 
@@ -267,7 +267,7 @@ async def callback_handler(client, callback_query):
                  f"{text_emoji('⏰')} <b>Start Time:</b> 00:00\n"
                  f"{text_emoji('⏳')} <b>End Time:</b> 23:59\n\n"
                  f"সব সেটিংস ঠিক থাকলে নিচের জেনারেট বাটনে ক্লিক করুন।",
-            parse_mode="html",
+            parse_mode=ParseMode.HTML,
             reply_markup=make_generate_action_menu()
         )
 
@@ -362,7 +362,7 @@ async def callback_handler(client, callback_query):
                         await callback_query.message.reply_text(res)
 
             except Exception as e:
-                await callback_query.message.reply_text(f"{text_emoji('❌')} <b>API Error:</b> {str(e)}", parse_mode="html")
+                await callback_query.message.reply_text(f"{text_emoji('❌')} <b>API Error:</b> {str(e)}", parse_mode=ParseMode.HTML)
 
 # ==================== RUN SERVICE ====================
 if __name__ == "__main__":
