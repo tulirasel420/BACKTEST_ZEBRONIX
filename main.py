@@ -18,7 +18,7 @@ def run_flask():
     app.run(host='0.0.0.0', port=port)
 
 # --- Telegram Bot Setup ---
-# এখানে তোমার টেলিগ্রাম বট টোকেন বসাবে অথবা Render Environment Variable-এ সেট করবে
+# Render Environment Variable-এ BOT_TOKEN সেট করা থাকলে সেটি নেবে, না থাকলে তোমার দেওয়া টোকেনটি ব্যাকআপ হিসেবে কাজ করবে
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8777471998:AAF-hUhqGReYVq-cJTCh_f2FLOSx6GLjvvA")
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -35,7 +35,7 @@ def start_command(message):
         "গান ডাউনলোড করতে সরাসরি লিংকটি এখানে পেস্ট করো।"
     )
     
-    # তোমার রিকোয়েস্ট অনুযায়ী কালার থিম বাটন (Using Emojis)
+    # কালার থিম বাটন (Using Emojis)
     markup = InlineKeyboardMarkup()
     markup.row(InlineKeyboardButton("🟢 Start / Active", callback_data="start_btn"))
     markup.row(
@@ -46,11 +46,19 @@ def start_command(message):
     
     bot.send_message(message.chat.id, welcome_text, reply_markup=markup, parse_mode="Markdown")
 
-# --- Link Downloader Handler ---
+# --- Link Downloader Handler (With Cookies Fix) ---
 @bot.message_handler(func=lambda message: message.text.startswith("http://") or message.text.startswith("https://"))
 def download_and_send_music(message):
     url = message.text
     processing_msg = bot.reply_to(message, "⏳ **ZEBRONIX** আপনার গানটি প্রসেস করছে... দয়া করে অপেক্ষা করুন।")
+    
+    # Render-এর Environment Variable থেকে কুকি ডাটা নিয়ে টেম্পোরারি ফাইল তৈরি
+    cookie_path = "downloads/youtube_cookies.txt"
+    cookies_data = os.environ.get("YT_COOKIES")
+    
+    if cookies_data:
+        with open(cookie_path, "w", encoding="utf-8") as f:
+            f.write(cookies_data)
     
     # yt-dlp অপশনস (অডিও ডাউনলোডের জন্য)
     ydl_opts = {
@@ -63,6 +71,10 @@ def download_and_send_music(message):
         }],
         'quiet': True
     }
+    
+    # যদি Render-এ কুকি সেট করা থাকে, তবে সেটি yt-dlp-এ পাস করা হবে
+    if cookies_data and os.path.exists(cookie_path):
+        ydl_opts['cookiefile'] = cookie_path
     
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -77,7 +89,7 @@ def download_and_send_music(message):
             InlineKeyboardButton("🔴 Delete", callback_data="delete_file")
         )
         
-        # টেলিগ্রামে অডিও ফাইল সেন্ড করা (টেলিগ্রাম সার্ভারে এটি অটো স্টোর হয়ে থাকবে)
+        # টেলিগ্রামে অ디오 ফাইল সেন্ড করা
         with open(filename, 'rb') as audio:
             bot.send_audio(
                 message.chat.id, 
@@ -87,11 +99,18 @@ def download_and_send_music(message):
                 parse_mode="Markdown"
             )
         
-        # লোকাল স্টোরেজ খালি করার জন্য ফাইল ডিলিট (টেলিগ্রামে ফাইলটি সেভ থাকবে)
-        os.remove(filename)
+        # কাজ শেষে লোকাল ফাইল এবং কুকি ফাইল ডিলিট করে স্পেস খালি করা
+        if os.path.exists(filename): 
+            os.remove(filename)
+        if os.path.exists(cookie_path): 
+            os.remove(cookie_path)
+            
         bot.delete_message(message.chat.id, processing_msg.message_id)
         
     except Exception as e:
+        # এরর আসলেও যেন কুকি ফাইল ডিলিট হয় তা নিশ্চিত করা
+        if os.path.exists(cookie_path): 
+            os.remove(cookie_path)
         bot.edit_message_text(f"❌ একটি সমস্যা হয়েছে! লিংকটি সঠিক কিনা চেক করুন।\nError: {str(e)}", message.chat.id, processing_msg.message_id)
 
 # --- Callback Query Handlers (Buttons Functionality) ---
@@ -100,7 +119,7 @@ def handle_buttons(call):
     if call.data == "start_btn":
         bot.answer_callback_query(call.id, "ZEBRONIX SONG Bot ইজ একটিভ! ⚡")
     elif call.data == "songs_btn":
-        bot.send_message(call.message.chat.id, "🔵 আপনার পাঠানো গানগুলো টেলিগ্রাম চ্যাটেই স্টোর করা আছে। যেকোনো সময় প্লে করতে পারবেন।")
+        bot.send_message(call.message.chat.id, "🔵 আপনার পাঠানো গানগুলো এই টেলিগ্রাম চ্যাটেই স্টোর করা আছে।")
     elif call.data == "style_btn":
         bot.answer_callback_query(call.id, "🟡 এই ফিচারটি পরবর্তী আপডেটে আসবে।")
     elif call.data == "close_btn":
@@ -112,7 +131,7 @@ def handle_buttons(call):
         bot.delete_message(call.message.chat.id, call.message.message_id)
         bot.send_message(call.message.chat.id, "🗑️ চ্যাট থেকে মেসেজটি ডিলিট করা হয়েছে।")
 
-# --- Start Threading ---
+# --- Start Threading & Polling ---
 if __name__ == "__main__":
     # Flask ব্যাকগ্রাউন্ডে রান করানোর জন্য Threading
     t = threading.Thread(target=run_flask)
