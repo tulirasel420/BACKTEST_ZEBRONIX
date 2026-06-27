@@ -19,7 +19,7 @@ def run_flask():
 
 # --- Telegram Bot Setup ---
 # এখানে তোমার টেলিগ্রাম বট টোকেন বসাবে অথবা Render Environment Variable-এ সেট করবে
-BOT_TOKEN = os.environ.get("8777471998:AAF-hUhqGReYVq-cJTCh_f2FLOSx6GLjvvA", "YOUR_TELEGRAM_BOT_TOKEN_HERE")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8777471998:AAF-hUhqGReYVq-cJTCh_f2FLOSx6GLjvvA")
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # ডাউনলোড ফোল্ডার তৈরি
