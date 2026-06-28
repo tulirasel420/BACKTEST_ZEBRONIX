@@ -1,4 +1,5 @@
 # backend.py
+import asyncio
 import os
 import threading
 from flask import Flask
@@ -8,6 +9,12 @@ from config import API_ID, API_HASH, BOT_TOKEN, REQUIRED_CHANNEL
 import keyboard
 import strategy
 
+# পাইথনের নতুন ভার্সনে অ্যাসিনক্রোনাস লুপ এরর এড়ানোর ফিক্স
+try:
+    asyncio.get_event_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
 # Render-এর জন্য Flask Web Server তৈরি করা হচ্ছে
 flask_app = Flask(__name__)
 
@@ -16,7 +23,6 @@ def home():
     return "Bot is alive and running smoothly! 🚀"
 
 def run_flask():
-    # Render নিজে থেকে PORT অ্যাসাইন করে, না থাকলে ডিফল্ট ৮০৮০ নিবে
     port = int(os.environ.get("PORT", 8080))
     flask_app.run(host='0.0.0.0', port=port)
 
@@ -44,7 +50,9 @@ async def check_user_joined(client, user_id):
         return True
     except UserNotParticipant:
         return False
-    except Exception:
+    except Exception as e:
+        # আসল সমস্যা কী তা জানার জন্য এটি Render-এর Logs-এ প্রিন্ট হবে
+        print(f"❌ [MEMBERSHIP ERROR]: {str(e)}")
         return False
 
 @app.on_message(filters.command("start"))
@@ -55,10 +63,14 @@ async def start_command(client, message):
     is_joined = await check_user_joined(client, user.id)
     
     if not is_joined:
+        # আইডি বা ইউজারনেম যাই হোক ক্র্যাশ এড়াতে স্ট্রিং কনভার্ট করা হলো
+        clean_target = str(REQUIRED_CHANNEL).replace('@', '')
+        invite_link = f"https://t.me/{clean_target}"
+        
         await message.reply_text(
             f"❌ **ACCESS DENIED!** ❌\n\nHello {user.mention},\n"
             f"বটটি ব্যবহার করতে আপনাকে অবশ্যই আমাদের অফিশিয়াল গ্রুপ/চ্যানেলে জয়েন করতে হবে।",
-            reply_markup=keyboard.join_check_keyboard(f"https://t.me/{REQUIRED_CHANNEL.replace('@','')}")
+            reply_markup=keyboard.join_check_keyboard(invite_link)
         )
         return
 
@@ -97,7 +109,6 @@ async def callback_handler(client, callback_query):
         await callback_query.message.edit_text("🏡 **প্রধান মেনু:**", reply_markup=keyboard.main_menu_keyboard())
 
 if __name__ == "__main__":
-    # মূল বটের পাশাপাশি ব্যাকগ্রাউন্ডে ফ্ল্যাস্ক সার্ভার চালু করা হচ্ছে
     threading.Thread(target=run_flask, daemon=True).start()
     print("🚀 Quotex Premium Bot is Starting...")
     app.run()
